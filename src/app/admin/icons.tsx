@@ -86,6 +86,15 @@ export function WarningIcon() {
   );
 }
 
+export function MonitorIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <rect x="3" y="4.5" width="18" height="12" rx="1.5" />
+      <path d="M8.5 20.5h7M12 16.5v4" />
+    </svg>
+  );
+}
+
 export function BookOpenIcon() {
   return (
     <svg {...common} className="h-6 w-6" aria-hidden>

@@ -49,7 +49,10 @@ export default async function EventDetailPage({
           {event.eventDate.toISOString().slice(0, 10)} · Tax year{" "}
           {event.taxYear} · {event.status}
         </p>
-        <div className="mt-2 flex gap-4 text-sm">
+        <div className="mt-2 flex flex-wrap gap-4 text-sm">
+          <a href={`/admin/events/${eventId}/live`} className="text-brand-purple underline">
+            Live auction board
+          </a>
           <a href={`/admin/events/${eventId}/clerk`} className="text-brand-purple underline">
             Live auction clerk
           </a>

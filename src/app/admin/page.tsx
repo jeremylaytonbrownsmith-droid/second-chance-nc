@@ -9,6 +9,7 @@ import {
   DeviceMobileIcon,
   FolderIcon,
   GavelIcon,
+  MonitorIcon,
   SyncIcon,
   UploadIcon,
 } from "./icons";
@@ -39,6 +40,12 @@ export default async function AdminHomePage() {
             icon={<FolderIcon />}
             title="Item Catalog"
             description="Auction items, FMV entry, item donors, 8283 flags"
+          />
+          <HubCard
+            href={`/admin/events/${demoEvent.id}/live`}
+            icon={<MonitorIcon />}
+            title="Live Auction Board"
+            description="Every item's price live on one screen — click bids from multiple simulated bidders and watch it react"
           />
           <HubCard
             href={`/admin/events/${demoEvent.id}/clerk`}
