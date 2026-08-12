@@ -10,6 +10,7 @@ import {
   FolderIcon,
   GavelIcon,
   MonitorIcon,
+  PlayCircleIcon,
   SyncIcon,
   UploadIcon,
 } from "./icons";
@@ -35,6 +36,12 @@ export default async function AdminHomePage() {
           Everything below points at the live demo event — {demoEvent.name}.
         </p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <HubCard
+            href="/story"
+            icon={<PlayCircleIcon />}
+            title="Story Mode"
+            description="One link — auto-plays the whole night, doors open to donor CRM sync, on the real app"
+          />
           <HubCard
             href={`/admin/events/${demoEvent.id}`}
             icon={<FolderIcon />}

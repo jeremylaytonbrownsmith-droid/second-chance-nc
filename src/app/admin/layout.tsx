@@ -29,6 +29,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               Dashboard
             </a>
             <a
+              href="/story"
+              className="text-brand-purple-dark transition-colors hover:text-brand-purple hover:underline"
+            >
+              Story Mode
+            </a>
+            <a
               href="/admin/help"
               className="text-brand-purple-dark transition-colors hover:text-brand-purple hover:underline"
             >

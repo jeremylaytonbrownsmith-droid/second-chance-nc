@@ -26,6 +26,17 @@ export async function resetDemoData() {
 
   if (existing) {
     const eventIds = existing.events.map((e) => e.id);
+    // SyncLog.localId holds transaction ids, not event ids — collect them
+    // before the transactions themselves are deleted below, or the old
+    // sync log rows are orphaned and pile up across every reset instead
+    // of clearing.
+    const transactionIds = (
+      await prisma.transaction.findMany({
+        where: { eventId: { in: eventIds } },
+        select: { id: true },
+      })
+    ).map((t) => t.id);
+
     await prisma.transactionLine.deleteMany({
       where: { transaction: { eventId: { in: eventIds } } },
     });
@@ -38,7 +49,10 @@ export async function resetDemoData() {
     await prisma.constituent.deleteMany({ where: { orgId: existing.id } });
     await prisma.event.deleteMany({ where: { orgId: existing.id } });
     await prisma.syncLog.deleteMany({
-      where: { localId: { in: eventIds.length ? eventIds : ["__none__"] } },
+      where: {
+        entityType: "GIFT",
+        localId: { in: transactionIds.length ? transactionIds : ["__none__"] },
+      },
     });
     await prisma.organization.delete({ where: { id: existing.id } });
   }

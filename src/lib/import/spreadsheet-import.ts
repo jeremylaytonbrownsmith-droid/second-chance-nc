@@ -9,6 +9,7 @@ import {
   TRANSACTION_LINE_TYPES,
   type TransactionLineType,
 } from "@/lib/money/deductible";
+import { syncTransactionToEtapestry } from "@/lib/etapestry/demo-sync";
 
 /**
  * Historical gift data import (Section 11's validation step: "load the
@@ -301,6 +302,13 @@ export async function importSpreadsheetRows(
           return transaction;
         },
         after: async (_tx, result) => result,
+      });
+
+      // Best-effort, same as checkout: an imported gift is still a real
+      // gift and should queue for the same donor CRM sync. A sync
+      // failure must never fail the import row itself.
+      syncTransactionToEtapestry(transactionId).catch((err) => {
+        console.error("eTapestry sync failed for imported transaction", transactionId, err);
       });
 
       totalAmountCents += row.amountCents;

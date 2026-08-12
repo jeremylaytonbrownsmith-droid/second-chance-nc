@@ -86,6 +86,15 @@ export function WarningIcon() {
   );
 }
 
+export function PlayCircleIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10.2 8.7v6.6l5.4-3.3-5.4-3.3Z" />
+    </svg>
+  );
+}
+
 export function MonitorIcon() {
   return (
     <svg {...common} className="h-6 w-6" aria-hidden>
