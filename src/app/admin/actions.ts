@@ -12,6 +12,8 @@ import {
   updateAuctionItemFmv,
   type CreateAuctionItemInput,
 } from "@/lib/admin/auction-items";
+import { syncTransactionToEtapestry } from "@/lib/etapestry/demo-sync";
+import { resetDemoData } from "@/lib/demo/seed";
 
 function str(formData: FormData, key: string): string | undefined {
   const value = formData.get(key);
@@ -116,4 +118,16 @@ export async function closeAuctionItemAction(formData: FormData) {
     String(formData.get("actorId")),
   );
   revalidatePath(`/admin/events/${eventId}`);
+}
+
+export async function retrySyncAction(formData: FormData) {
+  await syncTransactionToEtapestry(String(formData.get("transactionId")));
+  revalidatePath("/admin/sync-log");
+}
+
+export async function resetDemoDataAction() {
+  const { event } = await resetDemoData();
+  revalidatePath("/admin");
+  revalidatePath(`/admin/events/${event.id}`);
+  revalidatePath("/admin/sync-log");
 }

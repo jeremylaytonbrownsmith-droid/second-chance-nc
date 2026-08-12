@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { listConstituents } from "@/lib/admin/constituents";
 import { listItemDonors } from "@/lib/admin/item-donors";
@@ -48,6 +49,20 @@ export default async function EventDetailPage({
           {event.eventDate.toISOString().slice(0, 10)} · Tax year{" "}
           {event.taxYear} · {event.status}
         </p>
+        <div className="mt-2 flex gap-4 text-sm">
+          <a href={`/admin/events/${eventId}/clerk`} className="text-brand-purple underline">
+            Live auction clerk
+          </a>
+          <a href={`/admin/events/${eventId}/checkout`} className="text-brand-purple underline">
+            Checkout
+          </a>
+          <Link href="/bid" className="text-brand-purple underline">
+            Bidder view
+          </Link>
+          <a href={`/admin/events/${eventId}/import`} className="text-brand-purple underline">
+            Import spreadsheet
+          </a>
+        </div>
       </div>
 
       {/* Auction items */}
