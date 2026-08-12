@@ -3,11 +3,21 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Second Chance Pet Adoptions brand palette, sampled from the client logo. */
+  --brand-purple: #7947a8;
+  --brand-purple-dark: #5c3480;
+  --brand-lavender: #dbbdf3;
+  --brand-lavender-tint: #f7f0fc;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-purple-dark: var(--brand-purple-dark);
+  --color-brand-lavender: var(--brand-lavender);
+  --color-brand-lavender-tint: var(--brand-lavender-tint);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

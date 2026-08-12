@@ -35,7 +35,7 @@ export default async function AdminHomePage() {
                 </td>
                 <td className="py-2 pr-4">
                   <a
-                    className="text-blue-600 underline"
+                    className="text-brand-purple underline"
                     href="/api/admin/organizations?format=csv"
                   >
                     CSV
@@ -55,7 +55,7 @@ export default async function AdminHomePage() {
 
         <form
           action={createOrganizationAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-neutral-200 bg-white p-4"
+          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
         >
           <div className="flex flex-col">
             <label className="text-xs text-neutral-500">Name</label>
@@ -87,7 +87,7 @@ export default async function AdminHomePage() {
           </div>
           <button
             type="submit"
-            className="rounded bg-neutral-900 px-3 py-1.5 text-white"
+            className="rounded bg-brand-purple px-3 py-1.5 text-white"
           >
             Add organization
           </button>
@@ -117,7 +117,7 @@ export default async function AdminHomePage() {
                 <td className="py-2 pr-4">{event.status}</td>
                 <td className="py-2 pr-4">
                   <a
-                    className="text-blue-600 underline"
+                    className="text-brand-purple underline"
                     href={`/admin/events/${event.id}`}
                   >
                     Open
@@ -137,7 +137,7 @@ export default async function AdminHomePage() {
 
         <form
           action={createEventAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-neutral-200 bg-white p-4"
+          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
         >
           <div className="flex flex-col">
             <label className="text-xs text-neutral-500">Organization</label>
@@ -182,7 +182,7 @@ export default async function AdminHomePage() {
           </div>
           <button
             type="submit"
-            className="rounded bg-neutral-900 px-3 py-1.5 text-white"
+            className="rounded bg-brand-purple px-3 py-1.5 text-white"
             disabled={organizations.length === 0}
           >
             Add event

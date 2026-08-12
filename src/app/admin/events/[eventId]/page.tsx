@@ -55,7 +55,7 @@ export default async function EventDetailPage({
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Item catalog</h2>
           <a
-            className="text-sm text-blue-600 underline"
+            className="text-sm text-brand-purple underline"
             href={`/api/admin/auction-items?eventId=${eventId}&format=csv`}
           >
             Export CSV
@@ -110,7 +110,7 @@ export default async function EventDetailPage({
                           required
                           className="w-24 rounded border border-neutral-300 px-1 py-0.5"
                         />
-                        <button className="rounded bg-neutral-900 px-2 py-0.5 text-white">
+                        <button className="rounded bg-brand-purple px-2 py-0.5 text-white">
                           Set FMV
                         </button>
                       </form>
@@ -125,7 +125,7 @@ export default async function EventDetailPage({
                           required
                           className="w-24 rounded border border-neutral-300 px-1 py-0.5"
                         />
-                        <button className="rounded bg-neutral-900 px-2 py-0.5 text-white">
+                        <button className="rounded bg-brand-purple px-2 py-0.5 text-white">
                           Open
                         </button>
                       </form>
@@ -140,7 +140,7 @@ export default async function EventDetailPage({
                           required
                           className="w-24 rounded border border-neutral-300 px-1 py-0.5"
                         />
-                        <button className="rounded bg-neutral-900 px-2 py-0.5 text-white">
+                        <button className="rounded bg-brand-purple px-2 py-0.5 text-white">
                           Close
                         </button>
                       </form>
@@ -161,7 +161,7 @@ export default async function EventDetailPage({
 
         <form
           action={createAuctionItemAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-neutral-200 bg-white p-4"
+          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
         >
           <input type="hidden" name="eventId" value={eventId} />
           <div className="flex flex-col">
@@ -190,7 +190,7 @@ export default async function EventDetailPage({
             <label className="text-xs text-neutral-500">FMV basis</label>
             <input name="fmvBasis" className="w-32 rounded border border-neutral-300 px-2 py-1" />
           </div>
-          <button type="submit" className="rounded bg-neutral-900 px-3 py-1.5 text-white">
+          <button type="submit" className="rounded bg-brand-purple px-3 py-1.5 text-white">
             Add item
           </button>
         </form>
@@ -205,7 +205,7 @@ export default async function EventDetailPage({
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Item donors</h2>
           <a
-            className="text-sm text-blue-600 underline"
+            className="text-sm text-brand-purple underline"
             href={`/api/admin/item-donors?eventId=${eventId}&format=csv`}
           >
             Export CSV
@@ -245,7 +245,7 @@ export default async function EventDetailPage({
 
         <form
           action={createItemDonorAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-neutral-200 bg-white p-4"
+          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
         >
           <input type="hidden" name="eventId" value={eventId} />
           <div className="flex flex-col">
@@ -276,7 +276,7 @@ export default async function EventDetailPage({
           <button
             type="submit"
             disabled={constituents.length === 0}
-            className="rounded bg-neutral-900 px-3 py-1.5 text-white"
+            className="rounded bg-brand-purple px-3 py-1.5 text-white"
           >
             Add item donor
           </button>
@@ -288,7 +288,7 @@ export default async function EventDetailPage({
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Constituents</h2>
           <a
-            className="text-sm text-blue-600 underline"
+            className="text-sm text-brand-purple underline"
             href={`/api/admin/constituents?orgId=${event.orgId}&format=csv`}
           >
             Export CSV
@@ -324,7 +324,7 @@ export default async function EventDetailPage({
 
         <form
           action={createConstituentAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-neutral-200 bg-white p-4"
+          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
         >
           <input type="hidden" name="orgId" value={event.orgId} />
           <input type="hidden" name="eventId" value={eventId} />
@@ -347,7 +347,7 @@ export default async function EventDetailPage({
             <label className="text-xs text-neutral-500">Email</label>
             <input name="email" type="email" className="rounded border border-neutral-300 px-2 py-1" />
           </div>
-          <button type="submit" className="rounded bg-neutral-900 px-3 py-1.5 text-white">
+          <button type="submit" className="rounded bg-brand-purple px-3 py-1.5 text-white">
             Add constituent
           </button>
         </form>
