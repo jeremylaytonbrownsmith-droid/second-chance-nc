@@ -1,0 +1,462 @@
+// Second Chance Pet Adoptions — Auction and Giving System
+// Phase 1 data model. See CLAUDE.md for the hard rules this schema follows:
+// integer cents everywhere, soft delete only, audit rows on money mutations.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum EventStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum AuctionItemType {
+  SILENT
+  LIVE
+  RAFFLE
+  FIXED_PRICE
+  FUND_A_NEED
+}
+
+enum AuctionItemStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  AWARDED
+  UNSOLD
+}
+
+enum BidSource {
+  MOBILE
+  PAPER
+  AUCTIONEER
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  WRITTEN_OFF
+}
+
+enum TransactionMethod {
+  CARD
+  CASH
+  CHECK
+  IN_KIND
+}
+
+// Deductible calculation depends on this. See CLAUDE.md / Section 5 table.
+// Do not add a line type without updating src/lib/money/deductible.ts and
+// its tests in the same change.
+enum TransactionLineType {
+  AUCTION_WIN
+  RAFFLE
+  FUND_A_NEED
+  CASH_GIFT
+  TICKET
+  SPONSORSHIP
+  MERCH
+}
+
+enum ReceiptType {
+  QUID_PRO_QUO
+  ANNUAL_STATEMENT
+  IN_KIND
+}
+
+enum SyncEntityType {
+  CONSTITUENT
+  GIFT
+}
+
+enum SyncStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// Core organization / event
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id               String   @id @default(cuid())
+  name             String
+  ein              String?
+  fiscalYearStart  Int      @default(1) // month, 1-12
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  voidedAt  DateTime?
+  voidReason String?
+
+  events        Event[]
+  constituents  Constituent[]
+
+  @@map("organizations")
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id])
+
+  name          String
+  eventDate     DateTime
+  taxYear       Int
+  status        EventStatus @default(DRAFT)
+
+  silentCloseAt DateTime?
+  settingsJson  Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  voidedAt  DateTime?
+  voidReason String?
+
+  registrations Registration[]
+  itemDonors    ItemDonor[]
+  auctionItems  AuctionItem[]
+  transactions  Transaction[]
+
+  @@index([orgId])
+  @@map("events")
+}
+
+// ---------------------------------------------------------------------------
+// People
+// ---------------------------------------------------------------------------
+
+model Constituent {
+  id     String       @id @default(cuid())
+  orgId  String
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  firstName String?
+  lastName  String?
+  orgName   String? // set when isBusiness
+  isBusiness Boolean @default(false)
+
+  email   String?
+  phone   String?
+  address1 String?
+  address2 String?
+  city     String?
+  state    String?
+  postalCode String?
+  country  String?
+
+  etapestryAccountRef String?
+  notes               String?
+
+  mergedIntoId String?
+  mergedInto   Constituent?  @relation("ConstituentMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom   Constituent[] @relation("ConstituentMerge")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  voidedAt  DateTime?
+  voidReason String?
+
+  registrations Registration[]
+  itemDonors    ItemDonor[]
+  receipts      Receipt[]
+
+  @@index([orgId])
+  @@index([orgId, email])
+  @@index([orgId, lastName, firstName])
+  @@map("constituents")
+}
+
+model Registration {
+  id            String   @id @default(cuid())
+  eventId       String
+  event         Event    @relation(fields: [eventId], references: [id])
+  constituentId String
+  constituent   Constituent @relation(fields: [constituentId], references: [id])
+
+  bidderNumber    Int
+  tableAssignment String?
+  checkedInAt     DateTime?
+
+  // Processor tokens ONLY. Never store card numbers here or anywhere else.
+  paymentCustomerRef String?
+  paymentMethodRef   String?
+
+  status RegistrationStatus @default(REGISTERED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  voidedAt  DateTime?
+  voidReason String?
+
+  bids         Bid[]
+  awards       Award[]
+  transactions Transaction[]
+
+  @@unique([eventId, bidderNumber])
+  @@index([eventId, constituentId])
+  @@map("registrations")
+}
+
+// ---------------------------------------------------------------------------
+// Item donors / non-cash gift tracking (8283 / 8282)
+// ---------------------------------------------------------------------------
+
+model ItemDonor {
+  id            String   @id @default(cuid())
+  eventId       String
+  event         Event    @relation(fields: [eventId], references: [id])
+  constituentId String
+  constituent   Constituent @relation(fields: [constituentId], references: [id])
+
+  claimedValueCents    Int
+  // true when claimedValueCents > $500 — see substantiation.ts
+  substantiationNeeded Boolean @default(false)
+
+  form8283ReceivedAt DateTime?
+  form8282DueAt      DateTime?
+  form8282FiledAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  voidedAt  DateTime?
+  voidReason String?
+
+  auctionItems AuctionItem[]
+
+  @@index([eventId, constituentId])
+  @@map("item_donors")
+}
+
+// ---------------------------------------------------------------------------
+// Auction catalog
+// ---------------------------------------------------------------------------
+
+model AuctionItem {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id])
+
+  itemNumber  String
+  title       String
+  description String?
+  category    String?
+  itemType    AuctionItemType
+
+  // REQUIRED before status can move to OPEN. See CLAUDE.md rule 1.
+  fmvCents Int?
+  fmvBasis String?
+
+  startingBidCents Int?
+  bidIncrementCents Int?
+  buyNowCents       Int?
+  quantity          Int  @default(1)
+
+  itemDonorId String?
+  itemDonor   ItemDonor? @relation(fields: [itemDonorId], references: [id])
+
+  closeAt DateTime?
+  status  AuctionItemStatus @default(DRAFT)
+
+  images String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  voidedAt  DateTime?
+  voidReason String?
+
+  bids   Bid[]
+  awards Award[]
+
+  @@unique([eventId, itemNumber])
+  @@index([eventId, status])
+  @@map("auction_items")
+}
+
+model Bid {
+  id             String   @id @default(cuid())
+  itemId         String
+  item           AuctionItem @relation(fields: [itemId], references: [id])
+  registrationId String
+  registration   Registration @relation(fields: [registrationId], references: [id])
+
+  amountCents Int
+  placedAt    DateTime @default(now())
+  source      BidSource
+  isMaxBid    Boolean  @default(false)
+
+  voidedAt   DateTime?
+  voidReason String?
+
+  @@index([itemId, amountCents])
+  @@index([registrationId])
+  @@map("bids")
+}
+
+model Award {
+  id             String   @id @default(cuid())
+  itemId         String
+  item           AuctionItem @relation(fields: [itemId], references: [id])
+  registrationId String
+  registration   Registration @relation(fields: [registrationId], references: [id])
+
+  amountCents Int
+  awardedAt   DateTime @default(now())
+
+  voidedAt   DateTime?
+  voidReason String?
+
+  transactionLines TransactionLine[]
+
+  @@index([itemId])
+  @@index([registrationId])
+  @@map("awards")
+}
+
+// ---------------------------------------------------------------------------
+// Money: transactions, lines, receipts
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id             String   @id @default(cuid())
+  registrationId String
+  registration   Registration @relation(fields: [registrationId], references: [id])
+  eventId        String
+  event          Event    @relation(fields: [eventId], references: [id])
+
+  totalCents   Int
+  processor    String?
+  processorRef String?
+  status       TransactionStatus @default(PENDING)
+  paidAt       DateTime?
+  method       TransactionMethod?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  voidedAt  DateTime?
+  voidReason String?
+
+  lines TransactionLine[]
+
+  @@index([registrationId])
+  @@index([eventId, status])
+  @@map("transactions")
+}
+
+model TransactionLine {
+  id            String   @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  lineType TransactionLineType
+
+  // Nullable: pure gifts (FUND_A_NEED, CASH_GIFT) have no auction reference.
+  awardId String?
+  award   Award? @relation(fields: [awardId], references: [id])
+
+  amountCents     Int // what they paid
+  fmvCents        Int @default(0) // value of goods/services received
+  deductibleCents Int // computed — see src/lib/money/deductible.ts, never write this by hand
+
+  designation String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  voidedAt  DateTime?
+  voidReason String?
+
+  @@index([transactionId])
+  @@map("transaction_lines")
+}
+
+model Receipt {
+  id            String   @id @default(cuid())
+  constituentId String
+  constituent   Constituent @relation(fields: [constituentId], references: [id])
+
+  receiptType ReceiptType
+  eventId     String?
+  taxYear     Int?
+
+  generatedAt DateTime @default(now())
+  sentAt      DateTime?
+  pdfKey      String?
+
+  // Receipts are immutable. A correction creates a new Receipt row that
+  // voids this one by reference — never edit a sent receipt in place.
+  voidOfReceiptId String?
+  voidOfReceipt   Receipt?  @relation("ReceiptVoid", fields: [voidOfReceiptId], references: [id])
+  voidedBy        Receipt[] @relation("ReceiptVoid")
+
+  voidedAt   DateTime?
+  voidReason String?
+
+  @@index([constituentId, taxYear])
+  @@map("receipts")
+}
+
+// ---------------------------------------------------------------------------
+// Sync + audit
+// ---------------------------------------------------------------------------
+
+model SyncLog {
+  id         String   @id @default(cuid())
+  entityType SyncEntityType
+  localId    String
+  remoteRef  String?
+
+  status        SyncStatus @default(PENDING)
+  attempts      Int        @default(0)
+  lastAttemptAt DateTime?
+  lastError     String?
+  // Hash of the payload pushed — refuse to push the same gift twice.
+  payloadHash   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([entityType, localId])
+  @@index([status])
+  @@unique([entityType, localId, payloadHash])
+  @@map("sync_logs")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  entityType String
+  entityId   String
+  action     String
+
+  beforeJson Json?
+  afterJson  Json?
+
+  createdAt DateTime @default(now())
+  ip        String?
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@map("audit_logs")
+}
