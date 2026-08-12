@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-full bg-brand-lavender-tint text-neutral-900">
+    <div className="min-h-screen bg-brand-lavender-tint text-neutral-900">
       <header className="border-b-4 border-brand-purple bg-white px-6 py-3">
         <a href="/admin" className="inline-flex items-center gap-3">
           <Image
