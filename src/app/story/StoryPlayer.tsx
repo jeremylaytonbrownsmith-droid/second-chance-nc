@@ -22,6 +22,7 @@ type PhaseKey =
   | "bidding"
   | "hammer"
   | "checkout"
+  | "acknowledgment"
   | "import"
   | "sync"
   | "wrapup";
@@ -66,6 +67,14 @@ const PHASES: Phase[] = [
     caption:
       "At the end of the night, this bidder's auction win, a fund-a-need gift, and a cash gift all get checked out together — one payment. The receipt below shows the real tax math computed live, not entered by hand.",
     durationMs: 10_000,
+  },
+  {
+    key: "acknowledgment",
+    time: "9:05 PM",
+    title: "The Written Acknowledgment",
+    caption:
+      "The same receipt data becomes a real PDF the donor can keep for their taxes — generated on the spot, no re-typing. Emailing it automatically just needs an email service connected; that PDF is real and downloadable right now.",
+    durationMs: 8_000,
   },
   {
     key: "import",
@@ -364,6 +373,33 @@ export function StoryPlayer({
                 />
               ))}
 
+            {phase.key === "acknowledgment" &&
+              (!transactionId ? (
+                <StoryLoadingCard label="Preparing the acknowledgment…" />
+              ) : (
+                <div className="space-y-3">
+                  <iframe
+                    title="Acknowledgment PDF"
+                    src={`/api/admin/receipts/${transactionId}/pdf`}
+                    className="h-[54vh] w-full rounded-lg border border-white/10 bg-white"
+                  />
+                  <div className="flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+                    <a
+                      href={`/api/admin/receipts/${transactionId}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded bg-brand-purple px-3 py-1.5 font-semibold text-white transition-colors hover:bg-brand-purple-dark"
+                    >
+                      Open PDF
+                    </a>
+                    <span>
+                      This document is real and downloadable now. Sending it by email
+                      automatically is one connected email service away — not built yet.
+                    </span>
+                  </div>
+                </div>
+              ))}
+
             {phase.key === "import" &&
               (importPending || !importSummary ? (
                 <StoryLoadingCard label="Importing prior year's spreadsheet…" />
@@ -403,6 +439,7 @@ export function StoryPlayer({
                   <li>✓ Live bidding, updating on every device in real time</li>
                   <li>✓ A live-auction clerk screen fast enough for a ten-minute volunteer</li>
                   <li>✓ One checkout per bidder, with the tax math computed automatically</li>
+                  <li>✓ A real PDF acknowledgment letter, generated on the spot</li>
                   <li>✓ A prior year&rsquo;s spreadsheet reconciled in seconds, not days</li>
                   <li>✓ Every gift queued to sync to the donor CRM</li>
                 </ul>

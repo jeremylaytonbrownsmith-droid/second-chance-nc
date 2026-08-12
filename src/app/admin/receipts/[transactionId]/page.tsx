@@ -38,6 +38,17 @@ export default async function ReceiptPage({
         </div>
       )}
 
+      <div className="mb-4 flex justify-end print:hidden">
+        <a
+          href={`/api/admin/receipts/${transaction.id}/pdf`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded bg-brand-purple px-3 py-1.5 text-sm text-white transition-colors hover:bg-brand-purple-dark"
+        >
+          Download PDF acknowledgment
+        </a>
+      </div>
+
       <div className="rounded border border-brand-lavender bg-white p-4 sm:p-8">
         <div className="mb-6 text-center">
           <h1 className="text-lg font-semibold">{transaction.event.organization.name}</h1>
