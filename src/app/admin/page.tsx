@@ -3,6 +3,15 @@ import { listEvents } from "@/lib/admin/events";
 import { getOrCreateDemoEvent } from "@/lib/demo/seed";
 import { createEventAction, createOrganizationAction } from "./actions";
 import { HubCard } from "./HubCard";
+import {
+  BookOpenIcon,
+  CreditCardIcon,
+  DeviceMobileIcon,
+  FolderIcon,
+  GavelIcon,
+  SyncIcon,
+  UploadIcon,
+} from "./icons";
 
 export default async function AdminHomePage() {
   const [organizations, events, demoEvent] = await Promise.all([
@@ -27,39 +36,45 @@ export default async function AdminHomePage() {
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <HubCard
             href={`/admin/events/${demoEvent.id}`}
-            icon="🗂️"
+            icon={<FolderIcon />}
             title="Item Catalog"
             description="Auction items, FMV entry, item donors, 8283 flags"
           />
           <HubCard
             href={`/admin/events/${demoEvent.id}/clerk`}
-            icon="🔨"
+            icon={<GavelIcon />}
             title="Live Auction Clerk"
             description="Item #, paddle #, hammer price — one screen"
           />
           <HubCard
             href={`/admin/events/${demoEvent.id}/checkout`}
-            icon="💳"
+            icon={<CreditCardIcon />}
             title="Checkout"
             description="Consolidated checkout with live deductible math"
           />
           <HubCard
             href="/bid"
-            icon="📱"
+            icon={<DeviceMobileIcon />}
             title="Bidder View"
             description="Mobile browse + live bidding, updates in real time"
           />
           <HubCard
             href="/admin/sync-log"
-            icon="🔄"
+            icon={<SyncIcon />}
             title="eTapestry Sync Log"
             description="Gift sync queue, idempotency, retries"
           />
           <HubCard
             href={`/admin/events/${demoEvent.id}/import`}
-            icon="📥"
+            icon={<UploadIcon />}
             title="Import Spreadsheet"
             description="Load historical gift data, get correct tax totals"
+          />
+          <HubCard
+            href="/admin/help"
+            icon={<BookOpenIcon />}
+            title="Help & Guide"
+            description="How every screen works, written for staff, not developers"
           />
         </div>
       </section>

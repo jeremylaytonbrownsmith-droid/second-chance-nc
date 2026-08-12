@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CheckCircleIcon, WarningIcon } from "@/app/admin/icons";
 
 interface LogEntry {
   id: string;
@@ -144,9 +145,13 @@ export function ClerkForm({ eventId }: { eventId: string }) {
         {log.map((entry) => (
           <div
             key={entry.id}
-            className={entry.isError ? "text-sm text-red-600" : "text-sm text-neutral-700"}
+            className={
+              entry.isError
+                ? "flex items-center gap-1.5 text-sm text-red-600"
+                : "flex items-center gap-1.5 text-sm text-neutral-700"
+            }
           >
-            {entry.isError ? "⚠ " : "✓ "}
+            {entry.isError ? <WarningIcon /> : <CheckCircleIcon />}
             {entry.text}
           </div>
         ))}

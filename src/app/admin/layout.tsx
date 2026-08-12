@@ -5,7 +5,7 @@ import { ResetDemoButton } from "./ResetDemoButton";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-brand-lavender-tint text-neutral-900">
+    <div className="flex min-h-screen flex-col bg-brand-lavender-tint text-neutral-900">
       <header className="border-b-4 border-brand-purple bg-white px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
           <a href="/admin" className="inline-flex items-center gap-3">
@@ -29,6 +29,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               Dashboard
             </a>
             <a
+              href="/admin/help"
+              className="text-brand-purple-dark transition-colors hover:text-brand-purple hover:underline"
+            >
+              Help &amp; Guide
+            </a>
+            <a
               href="/admin/sync-log"
               className="text-brand-purple-dark transition-colors hover:text-brand-purple hover:underline"
             >
@@ -44,7 +50,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+      <footer className="border-t border-brand-lavender bg-white px-4 py-4 text-center text-xs text-neutral-500 sm:px-6">
+        Not sure how something works?{" "}
+        <a href="/admin/help" className="text-brand-purple hover:underline">
+          See the full guide
+        </a>
+        .
+      </footer>
     </div>
   );
 }
