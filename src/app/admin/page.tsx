@@ -1,10 +1,15 @@
 import { listOrganizations } from "@/lib/admin/organizations";
 import { listEvents } from "@/lib/admin/events";
+import { getOrCreateDemoEvent } from "@/lib/demo/seed";
 import { createEventAction, createOrganizationAction } from "./actions";
+import { HubCard } from "./HubCard";
 
 export default async function AdminHomePage() {
-  const organizations = await listOrganizations();
-  const events = await listEvents();
+  const [organizations, events, demoEvent] = await Promise.all([
+    listOrganizations(),
+    listEvents(),
+    getOrCreateDemoEvent(),
+  ]);
   const eventsByOrg = new Map<string, typeof events>();
   for (const event of events) {
     const list = eventsByOrg.get(event.orgId) ?? [];
@@ -13,45 +18,92 @@ export default async function AdminHomePage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       <section>
-        <h1 className="text-2xl font-semibold">Organizations</h1>
-        <table className="mt-4 w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-neutral-300 text-left">
-              <th className="py-2 pr-4">Name</th>
-              <th className="py-2 pr-4">EIN</th>
-              <th className="py-2 pr-4">Events</th>
-              <th className="py-2 pr-4">Export</th>
-            </tr>
-          </thead>
-          <tbody>
-            {organizations.map((org) => (
-              <tr key={org.id} className="border-b border-neutral-100">
-                <td className="py-2 pr-4">{org.name}</td>
-                <td className="py-2 pr-4">{org.ein ?? "—"}</td>
-                <td className="py-2 pr-4">
-                  {(eventsByOrg.get(org.id) ?? []).length}
-                </td>
-                <td className="py-2 pr-4">
-                  <a
-                    className="text-brand-purple underline"
-                    href="/api/admin/organizations?format=csv"
-                  >
-                    CSV
-                  </a>
-                </td>
+        <h1 className="text-2xl font-semibold">Quick actions</h1>
+        <p className="mt-1 text-sm text-neutral-500">
+          Everything below points at the live demo event — {demoEvent.name}.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <HubCard
+            href={`/admin/events/${demoEvent.id}`}
+            icon="🗂️"
+            title="Item Catalog"
+            description="Auction items, FMV entry, item donors, 8283 flags"
+          />
+          <HubCard
+            href={`/admin/events/${demoEvent.id}/clerk`}
+            icon="🔨"
+            title="Live Auction Clerk"
+            description="Item #, paddle #, hammer price — one screen"
+          />
+          <HubCard
+            href={`/admin/events/${demoEvent.id}/checkout`}
+            icon="💳"
+            title="Checkout"
+            description="Consolidated checkout with live deductible math"
+          />
+          <HubCard
+            href="/bid"
+            icon="📱"
+            title="Bidder View"
+            description="Mobile browse + live bidding, updates in real time"
+          />
+          <HubCard
+            href="/admin/sync-log"
+            icon="🔄"
+            title="eTapestry Sync Log"
+            description="Gift sync queue, idempotency, retries"
+          />
+          <HubCard
+            href={`/admin/events/${demoEvent.id}/import`}
+            icon="📥"
+            title="Import Spreadsheet"
+            description="Load historical gift data, get correct tax totals"
+          />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-semibold">Organizations</h2>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[480px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-neutral-300 text-left">
+                <th className="py-2 pr-4">Name</th>
+                <th className="py-2 pr-4">EIN</th>
+                <th className="py-2 pr-4">Events</th>
+                <th className="py-2 pr-4">Export</th>
               </tr>
-            ))}
-            {organizations.length === 0 && (
-              <tr>
-                <td colSpan={4} className="py-4 text-neutral-500">
-                  No organizations yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {organizations.map((org) => (
+                <tr key={org.id} className="border-b border-neutral-100">
+                  <td className="py-2 pr-4">{org.name}</td>
+                  <td className="py-2 pr-4">{org.ein ?? "—"}</td>
+                  <td className="py-2 pr-4">
+                    {(eventsByOrg.get(org.id) ?? []).length}
+                  </td>
+                  <td className="py-2 pr-4">
+                    <a
+                      className="text-brand-purple underline"
+                      href="/api/admin/organizations?format=csv"
+                    >
+                      CSV
+                    </a>
+                  </td>
+                </tr>
+              ))}
+              {organizations.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-4 text-neutral-500">
+                    No organizations yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         <form
           action={createOrganizationAction}
@@ -87,7 +139,7 @@ export default async function AdminHomePage() {
           </div>
           <button
             type="submit"
-            className="rounded bg-brand-purple px-3 py-1.5 text-white"
+            className="rounded bg-brand-purple px-3 py-1.5 text-white transition-colors hover:bg-brand-purple-dark"
           >
             Add organization
           </button>
@@ -95,45 +147,47 @@ export default async function AdminHomePage() {
       </section>
 
       <section>
-        <h1 className="text-2xl font-semibold">Events</h1>
-        <table className="mt-4 w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-neutral-300 text-left">
-              <th className="py-2 pr-4">Name</th>
-              <th className="py-2 pr-4">Date</th>
-              <th className="py-2 pr-4">Tax year</th>
-              <th className="py-2 pr-4">Status</th>
-              <th className="py-2 pr-4"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map((event) => (
-              <tr key={event.id} className="border-b border-neutral-100">
-                <td className="py-2 pr-4">{event.name}</td>
-                <td className="py-2 pr-4">
-                  {event.eventDate.toISOString().slice(0, 10)}
-                </td>
-                <td className="py-2 pr-4">{event.taxYear}</td>
-                <td className="py-2 pr-4">{event.status}</td>
-                <td className="py-2 pr-4">
-                  <a
-                    className="text-brand-purple underline"
-                    href={`/admin/events/${event.id}`}
-                  >
-                    Open
-                  </a>
-                </td>
+        <h2 className="text-xl font-semibold">Events</h2>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[560px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-neutral-300 text-left">
+                <th className="py-2 pr-4">Name</th>
+                <th className="py-2 pr-4">Date</th>
+                <th className="py-2 pr-4">Tax year</th>
+                <th className="py-2 pr-4">Status</th>
+                <th className="py-2 pr-4"></th>
               </tr>
-            ))}
-            {events.length === 0 && (
-              <tr>
-                <td colSpan={5} className="py-4 text-neutral-500">
-                  No events yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {events.map((event) => (
+                <tr key={event.id} className="border-b border-neutral-100">
+                  <td className="py-2 pr-4">{event.name}</td>
+                  <td className="py-2 pr-4">
+                    {event.eventDate.toISOString().slice(0, 10)}
+                  </td>
+                  <td className="py-2 pr-4">{event.taxYear}</td>
+                  <td className="py-2 pr-4">{event.status}</td>
+                  <td className="py-2 pr-4">
+                    <a
+                      className="text-brand-purple underline"
+                      href={`/admin/events/${event.id}`}
+                    >
+                      Open
+                    </a>
+                  </td>
+                </tr>
+              ))}
+              {events.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-4 text-neutral-500">
+                    No events yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         <form
           action={createEventAction}
@@ -182,7 +236,7 @@ export default async function AdminHomePage() {
           </div>
           <button
             type="submit"
-            className="rounded bg-brand-purple px-3 py-1.5 text-white"
+            className="rounded bg-brand-purple px-3 py-1.5 text-white transition-colors hover:bg-brand-purple-dark"
             disabled={organizations.length === 0}
           >
             Add event

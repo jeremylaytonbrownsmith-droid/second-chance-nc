@@ -143,7 +143,7 @@ export function BidBoard({
                 <button
                   disabled={pending[item.id]}
                   onClick={() => placeBid(item, nextBid)}
-                  className="rounded bg-brand-purple px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                  className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-3 py-1.5 text-sm text-white disabled:opacity-50"
                 >
                   Bid ${(nextBid / 100).toFixed(2)}
                 </button>

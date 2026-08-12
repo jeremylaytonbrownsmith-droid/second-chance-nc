@@ -27,7 +27,7 @@ export default async function BidderPickerPage() {
             <Link
               key={reg.id}
               href={`/bid/${reg.id}`}
-              className="block rounded border border-brand-lavender bg-white p-4 shadow-sm hover:border-brand-purple"
+              className="block rounded border border-brand-lavender bg-white p-4 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-brand-purple hover:shadow-md active:translate-y-0"
             >
               <div className="font-semibold">
                 Bidder #{reg.bidderNumber} —{" "}

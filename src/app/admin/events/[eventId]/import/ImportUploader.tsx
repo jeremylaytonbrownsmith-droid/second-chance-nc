@@ -89,7 +89,7 @@ export function ImportUploader({ eventId, orgId }: { eventId: string; orgId: str
         <button
           onClick={handleSubmit}
           disabled={submitting}
-          className="mt-4 rounded bg-brand-purple px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="mt-4 rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
           {submitting ? "Importing…" : "Import"}
         </button>

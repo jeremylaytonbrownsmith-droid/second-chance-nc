@@ -134,7 +134,7 @@ export function ClerkForm({ eventId }: { eventId: string }) {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded bg-brand-purple py-3 text-xl font-semibold text-white disabled:opacity-50"
+          className="w-full rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark py-3 text-xl font-semibold text-white disabled:opacity-50"
         >
           Next
         </button>

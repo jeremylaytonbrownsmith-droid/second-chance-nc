@@ -38,7 +38,7 @@ export default async function ReceiptPage({
         </div>
       )}
 
-      <div className="rounded border border-brand-lavender bg-white p-8">
+      <div className="rounded border border-brand-lavender bg-white p-4 sm:p-8">
         <div className="mb-6 text-center">
           <h1 className="text-lg font-semibold">{transaction.event.organization.name}</h1>
           <p className="text-sm text-neutral-500">{transaction.event.name}</p>
@@ -47,34 +47,36 @@ export default async function ReceiptPage({
           </p>
         </div>
 
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-neutral-300 text-left">
-              <th className="py-1">Item</th>
-              <th className="py-1 text-right">Paid</th>
-              <th className="py-1 text-right">FMV</th>
-              <th className="py-1 text-right">Deductible</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transaction.lines.map((line) => (
-              <tr key={line.id} className="border-b border-neutral-100">
-                <td className="py-1">{LINE_TYPE_LABELS[line.lineType] ?? line.lineType}</td>
-                <td className="py-1 text-right">{money(line.amountCents)}</td>
-                <td className="py-1 text-right">{money(line.fmvCents)}</td>
-                <td className="py-1 text-right">{money(line.deductibleCents)}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[420px] text-sm">
+            <thead>
+              <tr className="border-b border-neutral-300 text-left">
+                <th className="py-1">Item</th>
+                <th className="py-1 text-right">Paid</th>
+                <th className="py-1 text-right">FMV</th>
+                <th className="py-1 text-right">Deductible</th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="font-semibold">
-              <td className="pt-2">Total</td>
-              <td className="pt-2 text-right">{money(transaction.totalCents)}</td>
-              <td></td>
-              <td className="pt-2 text-right">{money(totalDeductibleCents)}</td>
-            </tr>
-          </tfoot>
-        </table>
+            </thead>
+            <tbody>
+              {transaction.lines.map((line) => (
+                <tr key={line.id} className="border-b border-neutral-100">
+                  <td className="py-1">{LINE_TYPE_LABELS[line.lineType] ?? line.lineType}</td>
+                  <td className="py-1 text-right">{money(line.amountCents)}</td>
+                  <td className="py-1 text-right">{money(line.fmvCents)}</td>
+                  <td className="py-1 text-right">{money(line.deductibleCents)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="font-semibold">
+                <td className="pt-2">Total</td>
+                <td className="pt-2 text-right">{money(transaction.totalCents)}</td>
+                <td></td>
+                <td className="pt-2 text-right">{money(totalDeductibleCents)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
 
         {quidProQuoDisclosureRequired && (
           <p className="mt-6 rounded bg-neutral-100 p-3 text-xs text-neutral-700">

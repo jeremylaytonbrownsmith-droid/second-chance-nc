@@ -125,7 +125,7 @@ export default async function EventDetailPage({
                           required
                           className="w-24 rounded border border-neutral-300 px-1 py-0.5"
                         />
-                        <button className="rounded bg-brand-purple px-2 py-0.5 text-white">
+                        <button className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-2 py-0.5 text-white">
                           Set FMV
                         </button>
                       </form>
@@ -140,7 +140,7 @@ export default async function EventDetailPage({
                           required
                           className="w-24 rounded border border-neutral-300 px-1 py-0.5"
                         />
-                        <button className="rounded bg-brand-purple px-2 py-0.5 text-white">
+                        <button className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-2 py-0.5 text-white">
                           Open
                         </button>
                       </form>
@@ -155,7 +155,7 @@ export default async function EventDetailPage({
                           required
                           className="w-24 rounded border border-neutral-300 px-1 py-0.5"
                         />
-                        <button className="rounded bg-brand-purple px-2 py-0.5 text-white">
+                        <button className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-2 py-0.5 text-white">
                           Close
                         </button>
                       </form>
@@ -205,7 +205,7 @@ export default async function EventDetailPage({
             <label className="text-xs text-neutral-500">FMV basis</label>
             <input name="fmvBasis" className="w-32 rounded border border-neutral-300 px-2 py-1" />
           </div>
-          <button type="submit" className="rounded bg-brand-purple px-3 py-1.5 text-white">
+          <button type="submit" className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-3 py-1.5 text-white">
             Add item
           </button>
         </form>
@@ -291,7 +291,7 @@ export default async function EventDetailPage({
           <button
             type="submit"
             disabled={constituents.length === 0}
-            className="rounded bg-brand-purple px-3 py-1.5 text-white"
+            className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-3 py-1.5 text-white"
           >
             Add item donor
           </button>
@@ -362,7 +362,7 @@ export default async function EventDetailPage({
             <label className="text-xs text-neutral-500">Email</label>
             <input name="email" type="email" className="rounded border border-neutral-300 px-2 py-1" />
           </div>
-          <button type="submit" className="rounded bg-brand-purple px-3 py-1.5 text-white">
+          <button type="submit" className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-3 py-1.5 text-white">
             Add constituent
           </button>
         </form>

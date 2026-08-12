@@ -6,8 +6,8 @@ import { ResetDemoButton } from "./ResetDemoButton";
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-brand-lavender-tint text-neutral-900">
-      <header className="border-b-4 border-brand-purple bg-white px-6 py-3">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+      <header className="border-b-4 border-brand-purple bg-white px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
           <a href="/admin" className="inline-flex items-center gap-3">
             <Image
               src="/brand/second-chance-logo.png"
@@ -15,27 +15,36 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               width={180}
               height={64}
               priority
-              className="h-10 w-auto"
+              className="h-9 w-auto sm:h-10"
             />
             <span className="hidden text-sm font-medium text-brand-purple-dark sm:inline">
               Auction &amp; Giving
             </span>
           </a>
-          <nav className="flex items-center gap-4 text-sm">
-            <a href="/admin" className="text-brand-purple-dark hover:underline">
-              Organizations &amp; Events
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            <a
+              href="/admin"
+              className="text-brand-purple-dark transition-colors hover:text-brand-purple hover:underline"
+            >
+              Dashboard
             </a>
-            <a href="/admin/sync-log" className="text-brand-purple-dark hover:underline">
+            <a
+              href="/admin/sync-log"
+              className="text-brand-purple-dark transition-colors hover:text-brand-purple hover:underline"
+            >
               Sync Log
             </a>
-            <Link href="/bid" className="text-brand-purple-dark hover:underline">
+            <Link
+              href="/bid"
+              className="text-brand-purple-dark transition-colors hover:text-brand-purple hover:underline"
+            >
               Bidder view
             </Link>
             <ResetDemoButton />
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">{children}</main>
     </div>
   );
 }

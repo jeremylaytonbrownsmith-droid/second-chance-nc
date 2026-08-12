@@ -203,7 +203,7 @@ export function CheckoutClient({
                 </button>
               </div>
             ))}
-            <div className="mt-3 flex items-end gap-2">
+            <div className="mt-3 flex flex-wrap items-end gap-2">
               <select
                 value={newLineType}
                 onChange={(e) => setNewLineType(e.target.value as AdhocLine["lineType"])}
@@ -224,7 +224,7 @@ export function CheckoutClient({
               />
               <button
                 onClick={addAdhocLine}
-                className="rounded bg-neutral-200 px-3 py-1.5 text-sm"
+                className="rounded bg-neutral-200 px-3 py-1.5 text-sm transition-colors hover:bg-neutral-300"
               >
                 Add
               </button>
@@ -251,7 +251,7 @@ export function CheckoutClient({
             <button
               onClick={handleCheckout}
               disabled={submitting || totalCents === 0}
-              className="mt-4 w-full rounded bg-brand-purple py-2.5 font-semibold text-white disabled:opacity-50"
+              className="mt-4 w-full rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark py-2.5 font-semibold text-white disabled:opacity-50"
             >
               {submitting ? "Processing…" : "Complete checkout"}
             </button>
