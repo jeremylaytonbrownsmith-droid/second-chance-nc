@@ -5,9 +5,11 @@ const SECTIONS = [
   { id: "overview", label: "What this system is" },
   { id: "how-it-fits", label: "How the pieces fit together" },
   { id: "setup", label: "Setting up an event" },
+  { id: "soliciting", label: "Soliciting and logging donations" },
   { id: "auction-night", label: "Running the event" },
   { id: "tax-math", label: "How the tax math works" },
   { id: "etapestry", label: "Donor CRM (eTapestry) sync" },
+  { id: "givesmart", label: "GiveSmart export" },
   { id: "import", label: "Importing a spreadsheet" },
   { id: "demo-mode", label: "Demo mode" },
   { id: "faq", label: "Common questions" },
@@ -124,6 +126,29 @@ export default function HelpPage() {
         </section>
 
         <section>
+          <H2 id="soliciting">Soliciting and logging donations</H2>
+          <P>
+            Before there&rsquo;s a catalog, there&rsquo;s an ask list — the businesses and
+            individuals staff have reached out to, weeks or months before the event. The{" "}
+            <strong>Solicitations</strong> screen tracks that: a contact, a category, and a
+            status (Prospect, Asked, Declined, or Donated), searchable and filterable by
+            both. Nothing here is a real donor record yet — it&rsquo;s deliberately
+            lightweight, since most asks don&rsquo;t convert.
+          </P>
+          <P>
+            When something actually comes in, use <strong>Log a Donation</strong> — built
+            like an expense-report app: take a photo (or a few), write a short description,
+            set a category and an estimated value, and save. That one step creates the
+            donor record, the item donor record (which drives the Form 8283 threshold), and
+            the catalog item itself — no separate re-entry. If you got there from a
+            solicitation, that ask is automatically marked Donated and linked to the new
+            item. The estimated value fills in the item&rsquo;s fair market value as a
+            starting point; confirm or adjust it from the Item Catalog before the item opens
+            for bidding.
+          </P>
+        </section>
+
+        <section>
           <H2 id="auction-night">Running the event</H2>
           <P>
             <strong>Bidder View</strong> — the mobile page bidders use on their own phones
@@ -194,6 +219,26 @@ export default function HelpPage() {
             be rebuilt when the real connection goes live, only the one piece that
             actually talks to eTapestry gets swapped in.
           </P>
+        </section>
+
+        <section>
+          <H2 id="givesmart">GiveSmart export</H2>
+          <P>
+            Some organizations run live bidding, registration, and ticketing through
+            GiveSmart rather than the Bidder View built into this system — and today, that
+            means re-typing every catalog item into GiveSmart by hand, matching item
+            numbers so a winning bid ties back to the right physical item. The{" "}
+            <strong>Export for GiveSmart</strong> link on the Item Catalog page generates a
+            CSV of the whole catalog — item number, name, description, category, fair
+            market value, donor — ready to upload through GiveSmart&rsquo;s own item-import
+            tool instead of retyping it.
+          </P>
+          <div className="mt-4 rounded border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-900">
+            <strong>Important:</strong> this is a file you upload, not a live connection —
+            no public GiveSmart API for pushing items in was available while building this.
+            Check the column headers below against Manage → Items → Import in the real
+            GiveSmart account before relying on it; the exact template can vary by account.
+          </div>
         </section>
 
         <section>

@@ -111,3 +111,22 @@ export function BookOpenIcon() {
     </svg>
   );
 }
+
+export function ClipboardListIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <rect x="5" y="4" width="14" height="17" rx="1.8" />
+      <path d="M9 3.5h6a.5.5 0 0 1 .5.5v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-1a.5.5 0 0 1 .5-.5Z" />
+      <path d="M8.5 11h7M8.5 14.5h7M8.5 18h4" />
+    </svg>
+  );
+}
+
+export function CameraIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <path d="M4 8.5a1.5 1.5 0 0 1 1.5-1.5h1.6l1-1.6a1 1 0 0 1 .85-.4h6.1a1 1 0 0 1 .85.4l1 1.6h1.6A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" />
+      <circle cx="12" cy="13" r="3.4" />
+    </svg>
+  );
+}

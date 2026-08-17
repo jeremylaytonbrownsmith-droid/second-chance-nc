@@ -4,6 +4,7 @@ import {
   AuctionItemType,
   EventStatus,
   RegistrationStatus,
+  SolicitationStatus,
 } from "@prisma/client";
 
 /**
@@ -43,6 +44,9 @@ export async function resetDemoData() {
     await prisma.transaction.deleteMany({ where: { eventId: { in: eventIds } } });
     await prisma.bid.deleteMany({ where: { item: { eventId: { in: eventIds } } } });
     await prisma.award.deleteMany({ where: { item: { eventId: { in: eventIds } } } });
+    // Solicitation.fulfilledAuctionItemId references AuctionItem, so this
+    // has to clear before the auction items themselves are deleted below.
+    await prisma.solicitation.deleteMany({ where: { eventId: { in: eventIds } } });
     await prisma.auctionItem.deleteMany({ where: { eventId: { in: eventIds } } });
     await prisma.itemDonor.deleteMany({ where: { eventId: { in: eventIds } } });
     await prisma.registration.deleteMany({ where: { eventId: { in: eventIds } } });
@@ -189,6 +193,43 @@ export async function resetDemoData() {
         fmvCents: 0,
         fmvBasis: "No goods or services received",
         status: AuctionItemStatus.OPEN,
+      },
+    }),
+  ]);
+
+  // Section: the solicitation list — asks that haven't (yet) become
+  // catalog items. Demonstrates the search-by-category/status feedback
+  // this was built from; deliberately spans every status.
+  await Promise.all([
+    prisma.solicitation.create({
+      data: {
+        eventId: event.id,
+        contactName: "Riverside Grill",
+        contactEmail: "events@riversidegrill.demo",
+        category: "Restaurants",
+        status: SolicitationStatus.ASKED,
+        estimatedValueCents: 10_000,
+        notes: "Offered a $100 dinner-for-four gift card, waiting to hear back",
+      },
+    }),
+    prisma.solicitation.create({
+      data: {
+        eventId: event.id,
+        contactName: "Bright Paws Grooming",
+        contactPhone: "555-0170",
+        category: "Pet Services",
+        status: SolicitationStatus.PROSPECT,
+        notes: "On the list to call this week",
+      },
+    }),
+    prisma.solicitation.create({
+      data: {
+        eventId: event.id,
+        contactName: "Downtown Spa & Wellness",
+        contactEmail: "gifts@downtownspa.demo",
+        category: "Wellness",
+        status: SolicitationStatus.DECLINED,
+        notes: "Already committed to another gala this spring",
       },
     }),
   ]);

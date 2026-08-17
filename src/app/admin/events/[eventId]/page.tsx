@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { listConstituents } from "@/lib/admin/constituents";
 import { listItemDonors } from "@/lib/admin/item-donors";
-import { listAuctionItems } from "@/lib/admin/auction-items";
+import { listAuctionItemCategories, listAuctionItems } from "@/lib/admin/auction-items";
 import {
   closeAuctionItemAction,
   createAuctionItemAction,
@@ -20,17 +20,21 @@ function formatCents(cents: number | null): string {
 
 export default async function EventDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ eventId: string }>;
+  searchParams: Promise<{ category?: string; q?: string }>;
 }) {
   const { eventId } = await params;
+  const { category, q } = await searchParams;
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) notFound();
 
-  const [constituents, itemDonors, auctionItems] = await Promise.all([
+  const [constituents, itemDonors, auctionItems, itemCategories] = await Promise.all([
     listConstituents(event.orgId),
     listItemDonors(eventId),
-    listAuctionItems(eventId),
+    listAuctionItems(eventId, { category, search: q }),
+    listAuctionItemCategories(eventId),
   ]);
 
   const constituentName = (id: string) => {
@@ -65,25 +69,75 @@ export default async function EventDetailPage({
           <a href={`/admin/events/${eventId}/import`} className="text-brand-purple underline">
             Import spreadsheet
           </a>
+          <a href={`/admin/events/${eventId}/solicitations`} className="text-brand-purple underline">
+            Solicitations
+          </a>
+          <a href={`/admin/events/${eventId}/donations/new`} className="text-brand-purple underline">
+            Log a donation
+          </a>
         </div>
       </div>
 
       {/* Auction items */}
       <section>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <h2 className="text-xl font-semibold">Item catalog</h2>
-          <a
-            className="text-sm text-brand-purple underline"
-            href={`/api/admin/auction-items?eventId=${eventId}&format=csv`}
-          >
-            Export CSV
-          </a>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <a
+              className="text-brand-purple underline"
+              href={`/api/admin/events/${eventId}/givesmart-export`}
+            >
+              Export for GiveSmart
+            </a>
+            <a
+              className="text-brand-purple underline"
+              href={`/api/admin/auction-items?eventId=${eventId}&format=csv`}
+            >
+              Export CSV
+            </a>
+          </div>
         </div>
+        <form className="mt-3 flex flex-wrap items-end gap-3 text-sm" action={`/admin/events/${eventId}`}>
+          <div className="flex flex-col">
+            <label className="text-xs text-neutral-500">Search</label>
+            <input
+              name="q"
+              defaultValue={q ?? ""}
+              placeholder="Title, description, item #"
+              className="w-56 rounded border border-neutral-300 px-2 py-1"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs text-neutral-500">Category</label>
+            <select
+              name="category"
+              defaultValue={category ?? ""}
+              className="rounded border border-neutral-300 px-2 py-1"
+            >
+              <option value="">All categories</option>
+              {itemCategories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="rounded border border-brand-purple px-3 py-1.5 text-brand-purple transition-colors hover:bg-brand-lavender-tint">
+            Filter
+          </button>
+          {(category || q) && (
+            <a href={`/admin/events/${eventId}`} className="text-neutral-500 underline">
+              Clear
+            </a>
+          )}
+        </form>
         <table className="mt-4 w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-neutral-300 text-left">
+              <th className="py-2 pr-4"></th>
               <th className="py-2 pr-4">#</th>
               <th className="py-2 pr-4">Title</th>
+              <th className="py-2 pr-4">Category</th>
               <th className="py-2 pr-4">Type</th>
               <th className="py-2 pr-4">FMV</th>
               <th className="py-2 pr-4">Status</th>
@@ -93,8 +147,21 @@ export default async function EventDetailPage({
           <tbody>
             {auctionItems.map((item) => (
               <tr key={item.id} className="border-b border-neutral-100 align-top">
+                <td className="py-2 pr-4">
+                  {item.images[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.images[0]}
+                      alt=""
+                      className="h-10 w-10 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded bg-neutral-100" />
+                  )}
+                </td>
                 <td className="py-2 pr-4">{item.itemNumber}</td>
                 <td className="py-2 pr-4">{item.title}</td>
+                <td className="py-2 pr-4">{item.category ?? "—"}</td>
                 <td className="py-2 pr-4">{item.itemType}</td>
                 <td className="py-2 pr-4">{formatCents(item.fmvCents)}</td>
                 <td className="py-2 pr-4">{item.status}</td>
@@ -169,7 +236,7 @@ export default async function EventDetailPage({
             ))}
             {auctionItems.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-4 text-neutral-500">
+                <td colSpan={8} className="py-4 text-neutral-500">
                   No items yet.
                 </td>
               </tr>

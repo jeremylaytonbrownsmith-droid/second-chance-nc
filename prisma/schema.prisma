@@ -51,6 +51,13 @@ enum BidSource {
   AUCTIONEER
 }
 
+enum SolicitationStatus {
+  PROSPECT
+  ASKED
+  DECLINED
+  DONATED
+}
+
 enum TransactionStatus {
   PENDING
   PAID
@@ -101,36 +108,36 @@ enum SyncStatus {
 // ---------------------------------------------------------------------------
 
 model Organization {
-  id               String   @id @default(cuid())
-  name             String
-  ein              String?
-  fiscalYearStart  Int      @default(1) // month, 1-12
+  id              String  @id @default(cuid())
+  name            String
+  ein             String?
+  fiscalYearStart Int     @default(1) // month, 1-12
 
   // Marks this org (and everything under it) as demo/simulation data —
   // Section 14. Never mixed with real donor data; the UI banners any
   // screen scoped to a demo org and email sending is restricted.
   isDemo Boolean @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  voidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  voidedAt   DateTime?
   voidReason String?
 
-  events        Event[]
-  constituents  Constituent[]
+  events       Event[]
+  constituents Constituent[]
 
   @@map("organizations")
 }
 
 model Event {
-  id            String      @id @default(cuid())
-  orgId         String
-  organization  Organization @relation(fields: [orgId], references: [id])
+  id           String       @id @default(cuid())
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id])
 
-  name          String
-  eventDate     DateTime
-  taxYear       Int
-  status        EventStatus @default(DRAFT)
+  name      String
+  eventDate DateTime
+  taxYear   Int
+  status    EventStatus @default(DRAFT)
 
   silentCloseAt DateTime?
   settingsJson  Json?
@@ -140,15 +147,16 @@ model Event {
   // an extra join on every page render.
   isDemo Boolean @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  voidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  voidedAt   DateTime?
   voidReason String?
 
   registrations Registration[]
   itemDonors    ItemDonor[]
   auctionItems  AuctionItem[]
   transactions  Transaction[]
+  solicitations Solicitation[]
 
   @@index([orgId])
   @@map("events")
@@ -159,23 +167,23 @@ model Event {
 // ---------------------------------------------------------------------------
 
 model Constituent {
-  id     String       @id @default(cuid())
-  orgId  String
+  id           String       @id @default(cuid())
+  orgId        String
   organization Organization @relation(fields: [orgId], references: [id])
 
-  firstName String?
-  lastName  String?
-  orgName   String? // set when isBusiness
+  firstName  String?
+  lastName   String?
+  orgName    String? // set when isBusiness
   isBusiness Boolean @default(false)
 
-  email   String?
-  phone   String?
-  address1 String?
-  address2 String?
-  city     String?
-  state    String?
+  email      String?
+  phone      String?
+  address1   String?
+  address2   String?
+  city       String?
+  state      String?
   postalCode String?
-  country  String?
+  country    String?
 
   etapestryAccountRef String?
   notes               String?
@@ -184,9 +192,9 @@ model Constituent {
   mergedInto   Constituent?  @relation("ConstituentMerge", fields: [mergedIntoId], references: [id])
   mergedFrom   Constituent[] @relation("ConstituentMerge")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  voidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  voidedAt   DateTime?
   voidReason String?
 
   registrations Registration[]
@@ -200,9 +208,9 @@ model Constituent {
 }
 
 model Registration {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   eventId       String
-  event         Event    @relation(fields: [eventId], references: [id])
+  event         Event       @relation(fields: [eventId], references: [id])
   constituentId String
   constituent   Constituent @relation(fields: [constituentId], references: [id])
 
@@ -216,9 +224,9 @@ model Registration {
 
   status RegistrationStatus @default(REGISTERED)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  voidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  voidedAt   DateTime?
   voidReason String?
 
   bids         Bid[]
@@ -231,13 +239,47 @@ model Registration {
 }
 
 // ---------------------------------------------------------------------------
+// Solicitation tracking — the "who have we asked, what have we gotten"
+// list that exists before an item is ever donated. Deliberately lightweight
+// (a name/contact, not a full Constituent) since most asks never convert;
+// once one is marked DONATED it produces a real ItemDonor + AuctionItem.
+// ---------------------------------------------------------------------------
+
+model Solicitation {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id])
+
+  contactName         String
+  contactEmail        String?
+  contactPhone        String?
+  category            String?
+  notes               String?
+  estimatedValueCents Int?
+
+  status SolicitationStatus @default(PROSPECT)
+
+  fulfilledAuctionItemId String?      @unique
+  fulfilledAuctionItem   AuctionItem? @relation(fields: [fulfilledAuctionItemId], references: [id])
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  voidedAt   DateTime?
+  voidReason String?
+
+  @@index([eventId, status])
+  @@index([eventId, category])
+  @@map("solicitations")
+}
+
+// ---------------------------------------------------------------------------
 // Item donors / non-cash gift tracking (8283 / 8282)
 // ---------------------------------------------------------------------------
 
 model ItemDonor {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   eventId       String
-  event         Event    @relation(fields: [eventId], references: [id])
+  event         Event       @relation(fields: [eventId], references: [id])
   constituentId String
   constituent   Constituent @relation(fields: [constituentId], references: [id])
 
@@ -249,9 +291,9 @@ model ItemDonor {
   form8282DueAt      DateTime?
   form8282FiledAt    DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  voidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  voidedAt   DateTime?
   voidReason String?
 
   auctionItems AuctionItem[]
@@ -265,9 +307,9 @@ model ItemDonor {
 // ---------------------------------------------------------------------------
 
 model AuctionItem {
-  id          String   @id @default(cuid())
-  eventId     String
-  event       Event    @relation(fields: [eventId], references: [id])
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id])
 
   itemNumber  String
   title       String
@@ -279,7 +321,7 @@ model AuctionItem {
   fmvCents Int?
   fmvBasis String?
 
-  startingBidCents Int?
+  startingBidCents  Int?
   bidIncrementCents Int?
   buyNowCents       Int?
   quantity          Int  @default(1)
@@ -292,13 +334,14 @@ model AuctionItem {
 
   images String[] @default([])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  voidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  voidedAt   DateTime?
   voidReason String?
 
-  bids   Bid[]
-  awards Award[]
+  bids         Bid[]
+  awards       Award[]
+  solicitation Solicitation?
 
   @@unique([eventId, itemNumber])
   @@index([eventId, status])
@@ -306,16 +349,16 @@ model AuctionItem {
 }
 
 model Bid {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   itemId         String
-  item           AuctionItem @relation(fields: [itemId], references: [id])
+  item           AuctionItem  @relation(fields: [itemId], references: [id])
   registrationId String
   registration   Registration @relation(fields: [registrationId], references: [id])
 
   amountCents Int
-  placedAt    DateTime @default(now())
+  placedAt    DateTime  @default(now())
   source      BidSource
-  isMaxBid    Boolean  @default(false)
+  isMaxBid    Boolean   @default(false)
 
   voidedAt   DateTime?
   voidReason String?
@@ -326,9 +369,9 @@ model Bid {
 }
 
 model Award {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   itemId         String
-  item           AuctionItem @relation(fields: [itemId], references: [id])
+  item           AuctionItem  @relation(fields: [itemId], references: [id])
   registrationId String
   registration   Registration @relation(fields: [registrationId], references: [id])
 
@@ -350,22 +393,22 @@ model Award {
 // ---------------------------------------------------------------------------
 
 model Transaction {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   registrationId String
   registration   Registration @relation(fields: [registrationId], references: [id])
   eventId        String
-  event          Event    @relation(fields: [eventId], references: [id])
+  event          Event        @relation(fields: [eventId], references: [id])
 
   totalCents   Int
   processor    String?
   processorRef String?
-  status       TransactionStatus @default(PENDING)
+  status       TransactionStatus  @default(PENDING)
   paidAt       DateTime?
   method       TransactionMethod?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  voidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  voidedAt   DateTime?
   voidReason String?
 
   lines TransactionLine[]
@@ -376,7 +419,7 @@ model Transaction {
 }
 
 model TransactionLine {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   transactionId String
   transaction   Transaction @relation(fields: [transactionId], references: [id])
 
@@ -384,7 +427,7 @@ model TransactionLine {
 
   // Nullable: pure gifts (FUND_A_NEED, CASH_GIFT) have no auction reference.
   awardId String?
-  award   Award? @relation(fields: [awardId], references: [id])
+  award   Award?  @relation(fields: [awardId], references: [id])
 
   amountCents     Int // what they paid
   fmvCents        Int @default(0) // value of goods/services received
@@ -392,9 +435,9 @@ model TransactionLine {
 
   designation String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  voidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  voidedAt   DateTime?
   voidReason String?
 
   @@index([transactionId])
@@ -402,7 +445,7 @@ model TransactionLine {
 }
 
 model Receipt {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   constituentId String
   constituent   Constituent @relation(fields: [constituentId], references: [id])
 
@@ -410,7 +453,7 @@ model Receipt {
   eventId     String?
   taxYear     Int?
 
-  generatedAt DateTime @default(now())
+  generatedAt DateTime  @default(now())
   sentAt      DateTime?
   pdfKey      String?
 
@@ -432,7 +475,7 @@ model Receipt {
 // ---------------------------------------------------------------------------
 
 model SyncLog {
-  id         String   @id @default(cuid())
+  id         String         @id @default(cuid())
   entityType SyncEntityType
   localId    String
   remoteRef  String?
@@ -447,14 +490,14 @@ model SyncLog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([entityType, localId, payloadHash])
   @@index([entityType, localId])
   @@index([status])
-  @@unique([entityType, localId, payloadHash])
   @@map("sync_logs")
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
+  id         String @id @default(cuid())
   actorId    String
   entityType String
   entityId   String

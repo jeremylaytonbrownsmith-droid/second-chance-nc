@@ -5,6 +5,8 @@ import { createEventAction, createOrganizationAction } from "./actions";
 import { HubCard } from "./HubCard";
 import {
   BookOpenIcon,
+  CameraIcon,
+  ClipboardListIcon,
   CreditCardIcon,
   DeviceMobileIcon,
   FolderIcon,
@@ -46,7 +48,19 @@ export default async function AdminHomePage() {
             href={`/admin/events/${demoEvent.id}`}
             icon={<FolderIcon />}
             title="Item Catalog"
-            description="Auction items, FMV entry, item donors, 8283 flags"
+            description="Auction items, FMV entry, item donors, 8283 flags — searchable by category"
+          />
+          <HubCard
+            href={`/admin/events/${demoEvent.id}/solicitations`}
+            icon={<ClipboardListIcon />}
+            title="Solicitations"
+            description="Who you've asked for a donation, by category and status"
+          />
+          <HubCard
+            href={`/admin/events/${demoEvent.id}/donations/new`}
+            icon={<CameraIcon />}
+            title="Log a Donation"
+            description="Snap a photo, describe it, set a value — creates the catalog item"
           />
           <HubCard
             href={`/admin/events/${demoEvent.id}/live`}

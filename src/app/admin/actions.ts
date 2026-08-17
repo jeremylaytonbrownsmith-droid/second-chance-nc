@@ -14,6 +14,8 @@ import {
 } from "@/lib/admin/auction-items";
 import { syncTransactionToEtapestry } from "@/lib/etapestry/demo-sync";
 import { resetDemoData } from "@/lib/demo/seed";
+import { createSolicitation, setSolicitationStatus } from "@/lib/admin/solicitations";
+import type { SolicitationStatus } from "@prisma/client";
 
 function str(formData: FormData, key: string): string | undefined {
   const value = formData.get(key);
@@ -123,6 +125,30 @@ export async function closeAuctionItemAction(formData: FormData) {
 export async function retrySyncAction(formData: FormData) {
   await syncTransactionToEtapestry(String(formData.get("transactionId")));
   revalidatePath("/admin/sync-log");
+}
+
+export async function createSolicitationAction(formData: FormData) {
+  const eventId = String(formData.get("eventId"));
+  await createSolicitation({
+    eventId,
+    contactName: String(formData.get("contactName")),
+    contactEmail: str(formData, "contactEmail") ?? "",
+    contactPhone: str(formData, "contactPhone"),
+    category: str(formData, "category"),
+    notes: str(formData, "notes"),
+    estimatedValueCents: cents(formData, "estimatedValueDollars"),
+    status: (str(formData, "status") as SolicitationStatus) ?? "ASKED",
+  });
+  revalidatePath(`/admin/events/${eventId}/solicitations`);
+}
+
+export async function setSolicitationStatusAction(formData: FormData) {
+  const eventId = String(formData.get("eventId"));
+  await setSolicitationStatus(
+    String(formData.get("solicitationId")),
+    formData.get("status") as "PROSPECT" | "ASKED" | "DECLINED",
+  );
+  revalidatePath(`/admin/events/${eventId}/solicitations`);
 }
 
 export async function resetDemoDataAction() {

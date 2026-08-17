@@ -24,13 +24,42 @@ export const createAuctionItemSchema = z.object({
 
 export type CreateAuctionItemInput = z.input<typeof createAuctionItemSchema>;
 
+export interface AuctionItemFilters {
+  category?: string;
+  search?: string;
+}
+
 export async function listAuctionItems(
   eventId: string,
+  filters: AuctionItemFilters = {},
 ): Promise<AuctionItem[]> {
   return prisma.auctionItem.findMany({
-    where: { eventId, voidedAt: null },
+    where: {
+      eventId,
+      voidedAt: null,
+      ...(filters.category ? { category: filters.category } : {}),
+      ...(filters.search
+        ? {
+            OR: [
+              { title: { contains: filters.search, mode: "insensitive" } },
+              { description: { contains: filters.search, mode: "insensitive" } },
+              { itemNumber: { contains: filters.search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
     orderBy: { itemNumber: "asc" },
   });
+}
+
+export async function listAuctionItemCategories(eventId: string): Promise<string[]> {
+  const rows = await prisma.auctionItem.findMany({
+    where: { eventId, voidedAt: null, category: { not: null } },
+    select: { category: true },
+    distinct: ["category"],
+    orderBy: { category: "asc" },
+  });
+  return rows.map((r) => r.category).filter((c): c is string => Boolean(c));
 }
 
 export async function createAuctionItem(
