@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { button, card, input, label as labelClass } from "../../../ui";
 
 interface RegistrationOption {
   id: string;
@@ -143,19 +144,19 @@ export function CheckoutClient({
 
   return (
     <div className="max-w-xl space-y-6">
-      <div className="rounded border border-brand-lavender bg-white p-4">
-        <label className="text-xs text-neutral-500">Your name (staff)</label>
+      <div className={card}>
+        <label className={labelClass}>Your name (staff)</label>
         <input
           value={actorId}
           onChange={(e) => setActorId(e.target.value)}
-          className="mt-1 w-full rounded border border-neutral-300 px-2 py-1"
+          className={`mt-1 w-full ${input}`}
         />
 
-        <label className="mt-4 block text-xs text-neutral-500">Bidder</label>
+        <label className={`mt-4 block ${labelClass}`}>Bidder</label>
         <select
           value={registrationId}
           onChange={(e) => setRegistrationId(e.target.value)}
-          className="mt-1 w-full rounded border border-neutral-300 px-2 py-1"
+          className={`mt-1 w-full ${input}`}
         >
           <option value="">Select a bidder…</option>
           {registrations.map((r) => (
@@ -168,7 +169,7 @@ export function CheckoutClient({
 
       {registrationId && (
         <>
-          <div className="rounded border border-brand-lavender bg-white p-4">
+          <div className={card}>
             <h2 className="font-semibold">Auction wins</h2>
             {outstandingAwards.length === 0 && (
               <p className="mt-2 text-sm text-neutral-500">No unpaid awards.</p>
@@ -188,7 +189,7 @@ export function CheckoutClient({
             ))}
           </div>
 
-          <div className="rounded border border-brand-lavender bg-white p-4">
+          <div className={card}>
             <h2 className="font-semibold">Other gifts on this checkout</h2>
             {adhocLines.map((l) => (
               <div key={l.clientId} className="mt-2 flex items-center justify-between text-sm">
@@ -197,7 +198,7 @@ export function CheckoutClient({
                 </span>
                 <button
                   onClick={() => removeAdhocLine(l.clientId)}
-                  className="text-red-600 underline"
+                  className={button.danger}
                 >
                   Remove
                 </button>
@@ -207,7 +208,7 @@ export function CheckoutClient({
               <select
                 value={newLineType}
                 onChange={(e) => setNewLineType(e.target.value as AdhocLine["lineType"])}
-                className="rounded border border-neutral-300 px-2 py-1"
+                className={input}
               >
                 <option value="CASH_GIFT">Cash gift</option>
                 <option value="FUND_A_NEED">Fund a need</option>
@@ -220,29 +221,29 @@ export function CheckoutClient({
                 step="0.01"
                 min="0"
                 placeholder="$"
-                className="w-24 rounded border border-neutral-300 px-2 py-1"
+                className={`w-24 ${input}`}
               />
               <button
                 onClick={addAdhocLine}
-                className="rounded bg-neutral-200 px-3 py-1.5 text-sm transition-colors hover:bg-neutral-300"
+                className={button.secondary}
               >
                 Add
               </button>
             </div>
           </div>
 
-          <div className="rounded border border-brand-lavender bg-white p-4">
+          <div className={card}>
             <div className="flex items-center justify-between">
               <span className="font-semibold">Total</span>
               <span className="text-xl font-bold text-brand-purple">
                 ${(totalCents / 100).toFixed(2)}
               </span>
             </div>
-            <label className="mt-3 block text-xs text-neutral-500">Payment method</label>
+            <label className={`mt-3 block ${labelClass}`}>Payment method</label>
             <select
               value={method}
               onChange={(e) => setMethod(e.target.value as "CARD" | "CASH" | "CHECK")}
-              className="mt-1 w-full rounded border border-neutral-300 px-2 py-1"
+              className={`mt-1 w-full ${input}`}
             >
               <option value="CARD">Card (test — no real charge)</option>
               <option value="CASH">Cash</option>
@@ -251,7 +252,7 @@ export function CheckoutClient({
             <button
               onClick={handleCheckout}
               disabled={submitting || totalCents === 0}
-              className="mt-4 w-full rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark py-2.5 font-semibold text-white disabled:opacity-50"
+              className="mt-4 w-full rounded-lg bg-brand-purple py-2.5 font-semibold text-white shadow-sm transition-colors hover:bg-brand-purple-dark disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? "Processing…" : "Complete checkout"}
             </button>

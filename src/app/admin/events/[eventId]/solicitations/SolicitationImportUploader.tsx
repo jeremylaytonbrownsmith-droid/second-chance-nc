@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { button, card, input, label as labelClass } from "../../../ui";
 
 interface ImportSummary {
   sheetName: string;
@@ -51,20 +52,17 @@ export function SolicitationImportUploader({ eventId }: { eventId: string }) {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="text-sm text-brand-purple underline"
-      >
+      <button onClick={() => setOpen(true)} className={button.ghost}>
         Bulk import from spreadsheet
       </button>
     );
   }
 
   return (
-    <div className="rounded border border-brand-lavender bg-white p-4 text-sm">
+    <div className={`${card} text-sm`}>
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">Bulk import from spreadsheet</h3>
-        <button onClick={() => setOpen(false)} className="text-xs text-neutral-500 underline">
+        <button onClick={() => setOpen(false)} className={button.ghost}>
           Close
         </button>
       </div>
@@ -76,8 +74,8 @@ export function SolicitationImportUploader({ eventId }: { eventId: string }) {
       </p>
 
       <div className="mt-3 flex flex-wrap items-end gap-3">
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">File (.xlsx or .csv)</label>
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>File (.xlsx or .csv)</label>
           <input
             type="file"
             accept=".xlsx,.csv"
@@ -85,26 +83,22 @@ export function SolicitationImportUploader({ eventId }: { eventId: string }) {
             className="mt-1 text-sm"
           />
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Sheet name (optional)</label>
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Sheet name (optional)</label>
           <input
             value={sheetName}
             onChange={(e) => setSheetName(e.target.value)}
             placeholder="auto-detects an Outreach sheet"
-            className="w-56 rounded border border-neutral-300 px-2 py-1"
+            className={`w-56 ${input}`}
           />
         </div>
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="rounded bg-brand-purple px-4 py-2 font-semibold text-white transition-colors hover:bg-brand-purple-dark disabled:opacity-50"
-        >
+        <button onClick={handleSubmit} disabled={submitting} className={button.primary}>
           {submitting ? "Importing…" : "Import"}
         </button>
       </div>
       {error && <p className="mt-2 text-red-600">{error}</p>}
       {summary && (
-        <div className="mt-3 rounded bg-green-50 p-3 text-green-900">
+        <div className="mt-3 rounded-lg bg-green-50 p-3 text-green-900">
           Sheet &ldquo;{summary.sheetName}&rdquo;: {summary.totalRows} contacts found
           {summary.skippedBlank > 0 && ` (${summary.skippedBlank} blank rows skipped)`} —{" "}
           <strong>{summary.created} added</strong>, <strong>{summary.updated} updated</strong>.

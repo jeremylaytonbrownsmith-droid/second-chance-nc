@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { button, card, input, label as labelClass } from "../../../ui";
 
 interface ImportRowOutcome {
   rowNumber: number;
@@ -63,7 +64,7 @@ export function ImportUploader({ eventId, orgId }: { eventId: string; orgId: str
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="rounded border border-brand-lavender bg-white p-4">
+      <div className={card}>
         <p className="text-sm text-neutral-600">
           Expected columns (any reasonable header spelling works): <strong>Donor Name</strong>{" "}
           or <strong>Donor Email</strong>, <strong>Line Type</strong> (Auction Win, Raffle,
@@ -71,14 +72,14 @@ export function ImportUploader({ eventId, orgId }: { eventId: string; orgId: str
           optionally <strong>FMV</strong> and <strong>Designation</strong>.
         </p>
 
-        <label className="mt-4 block text-xs text-neutral-500">Your name</label>
+        <label className={`mt-4 block ${labelClass}`}>Your name</label>
         <input
           value={actorId}
           onChange={(e) => setActorId(e.target.value)}
-          className="mt-1 w-full rounded border border-neutral-300 px-2 py-1"
+          className={`mt-1 w-full ${input}`}
         />
 
-        <label className="mt-4 block text-xs text-neutral-500">File (.csv or .xlsx)</label>
+        <label className={`mt-4 block ${labelClass}`}>File (.csv or .xlsx)</label>
         <input
           type="file"
           accept=".csv,.xlsx"
@@ -86,18 +87,14 @@ export function ImportUploader({ eventId, orgId }: { eventId: string; orgId: str
           className="mt-1 w-full text-sm"
         />
 
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="mt-4 rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-        >
+        <button onClick={handleSubmit} disabled={submitting} className={`mt-4 ${button.primary}`}>
           {submitting ? "Importing…" : "Import"}
         </button>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
 
       {summary && (
-        <div className="rounded border border-brand-lavender bg-white p-4">
+        <div className={card}>
           <h2 className="font-semibold">Results</h2>
           <ul className="mt-2 text-sm">
             <li>{summary.totalRows} rows found</li>

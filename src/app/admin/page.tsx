@@ -3,6 +3,7 @@ import { listEvents } from "@/lib/admin/events";
 import { getOrCreateDemoEvent } from "@/lib/demo/seed";
 import { createEventAction, createOrganizationAction } from "./actions";
 import { HubCard } from "./HubCard";
+import { button, card, input, label as labelClass, table } from "./ui";
 import {
   BookOpenIcon,
   CameraIcon,
@@ -109,29 +110,26 @@ export default async function AdminHomePage() {
 
       <section>
         <h2 className="text-xl font-semibold">Organizations</h2>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[480px] border-collapse text-sm">
+        <div className={`mt-4 ${table.wrapper}`}>
+          <table className={`min-w-[480px] ${table.table}`}>
             <thead>
-              <tr className="border-b border-neutral-300 text-left">
-                <th className="py-2 pr-4">Name</th>
-                <th className="py-2 pr-4">EIN</th>
-                <th className="py-2 pr-4">Events</th>
-                <th className="py-2 pr-4">Export</th>
+              <tr className={table.headRow}>
+                <th className={table.th}>Name</th>
+                <th className={table.th}>EIN</th>
+                <th className={table.th}>Events</th>
+                <th className={table.th}>Export</th>
               </tr>
             </thead>
             <tbody>
               {organizations.map((org) => (
-                <tr key={org.id} className="border-b border-neutral-100">
-                  <td className="py-2 pr-4">{org.name}</td>
-                  <td className="py-2 pr-4">{org.ein ?? "—"}</td>
-                  <td className="py-2 pr-4">
+                <tr key={org.id} className={table.row}>
+                  <td className={table.td}>{org.name}</td>
+                  <td className={table.td}>{org.ein ?? "—"}</td>
+                  <td className={table.td}>
                     {(eventsByOrg.get(org.id) ?? []).length}
                   </td>
-                  <td className="py-2 pr-4">
-                    <a
-                      className="text-brand-purple underline"
-                      href="/api/admin/organizations?format=csv"
-                    >
+                  <td className={table.td}>
+                    <a className={button.ghost} href="/api/admin/organizations?format=csv">
                       CSV
                     </a>
                   </td>
@@ -139,7 +137,7 @@ export default async function AdminHomePage() {
               ))}
               {organizations.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-4 text-neutral-500">
+                  <td colSpan={4} className={table.empty}>
                     No organizations yet.
                   </td>
                 </tr>
@@ -150,40 +148,28 @@ export default async function AdminHomePage() {
 
         <form
           action={createOrganizationAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
+          className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
         >
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Name</label>
-            <input
-              name="name"
-              required
-              className="rounded border border-neutral-300 px-2 py-1"
-            />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Name</label>
+            <input name="name" required className={input} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">EIN</label>
-            <input
-              name="ein"
-              className="rounded border border-neutral-300 px-2 py-1"
-            />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>EIN</label>
+            <input name="ein" className={input} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">
-              Fiscal year start (month)
-            </label>
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Fiscal year start (month)</label>
             <input
               name="fiscalYearStart"
               type="number"
               min={1}
               max={12}
               defaultValue={1}
-              className="w-20 rounded border border-neutral-300 px-2 py-1"
+              className={`w-20 ${input}`}
             />
           </div>
-          <button
-            type="submit"
-            className="rounded bg-brand-purple px-3 py-1.5 text-white transition-colors hover:bg-brand-purple-dark"
-          >
+          <button type="submit" className={button.primary}>
             Add organization
           </button>
         </form>
@@ -191,39 +177,36 @@ export default async function AdminHomePage() {
 
       <section>
         <h2 className="text-xl font-semibold">Events</h2>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[560px] border-collapse text-sm">
+        <div className={`mt-4 ${table.wrapper}`}>
+          <table className={`min-w-[560px] ${table.table}`}>
             <thead>
-              <tr className="border-b border-neutral-300 text-left">
-                <th className="py-2 pr-4">Name</th>
-                <th className="py-2 pr-4">Date</th>
-                <th className="py-2 pr-4">Tax year</th>
-                <th className="py-2 pr-4">Status</th>
-                <th className="py-2 pr-4"></th>
+              <tr className={table.headRow}>
+                <th className={table.th}>Name</th>
+                <th className={table.th}>Date</th>
+                <th className={table.th}>Tax year</th>
+                <th className={table.th}>Status</th>
+                <th className={table.th}></th>
               </tr>
             </thead>
             <tbody>
               {events.map((event) => (
-                <tr key={event.id} className="border-b border-neutral-100">
-                  <td className="py-2 pr-4">{event.name}</td>
-                  <td className="py-2 pr-4">
+                <tr key={event.id} className={table.row}>
+                  <td className={table.td}>{event.name}</td>
+                  <td className={table.td}>
                     {event.eventDate.toISOString().slice(0, 10)}
                   </td>
-                  <td className="py-2 pr-4">{event.taxYear}</td>
-                  <td className="py-2 pr-4">{event.status}</td>
-                  <td className="py-2 pr-4">
-                    <a
-                      className="text-brand-purple underline"
-                      href={`/admin/events/${event.id}`}
-                    >
-                      Open
+                  <td className={table.td}>{event.taxYear}</td>
+                  <td className={table.td}>{event.status}</td>
+                  <td className={table.td}>
+                    <a className={button.ghost} href={`/admin/events/${event.id}`}>
+                      Open →
                     </a>
                   </td>
                 </tr>
               ))}
               {events.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-4 text-neutral-500">
+                  <td colSpan={5} className={table.empty}>
                     No events yet.
                   </td>
                 </tr>
@@ -234,15 +217,11 @@ export default async function AdminHomePage() {
 
         <form
           action={createEventAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
+          className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
         >
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Organization</label>
-            <select
-              name="orgId"
-              required
-              className="rounded border border-neutral-300 px-2 py-1"
-            >
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Organization</label>
+            <select name="orgId" required className={input}>
               {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
                   {org.name}
@@ -250,38 +229,25 @@ export default async function AdminHomePage() {
               ))}
             </select>
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Event name</label>
-            <input
-              name="name"
-              required
-              className="rounded border border-neutral-300 px-2 py-1"
-            />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Event name</label>
+            <input name="name" required className={input} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Event date</label>
-            <input
-              name="eventDate"
-              type="date"
-              required
-              className="rounded border border-neutral-300 px-2 py-1"
-            />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Event date</label>
+            <input name="eventDate" type="date" required className={input} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Tax year</label>
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Tax year</label>
             <input
               name="taxYear"
               type="number"
               required
               defaultValue={new Date().getUTCFullYear()}
-              className="w-24 rounded border border-neutral-300 px-2 py-1"
+              className={`w-24 ${input}`}
             />
           </div>
-          <button
-            type="submit"
-            className="rounded bg-brand-purple px-3 py-1.5 text-white transition-colors hover:bg-brand-purple-dark"
-            disabled={organizations.length === 0}
-          >
+          <button type="submit" className={button.primary} disabled={organizations.length === 0}>
             Add event
           </button>
         </form>

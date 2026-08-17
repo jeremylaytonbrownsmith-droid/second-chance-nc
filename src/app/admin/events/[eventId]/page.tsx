@@ -12,6 +12,7 @@ import {
   openAuctionItemAction,
   setAuctionItemFmvAction,
 } from "../../actions";
+import { button, card, input, label as labelClass, table } from "../../ui";
 
 function formatCents(cents: number | null): string {
   if (cents === null) return "—";
@@ -53,26 +54,26 @@ export default async function EventDetailPage({
           {event.eventDate.toISOString().slice(0, 10)} · Tax year{" "}
           {event.taxYear} · {event.status}
         </p>
-        <div className="mt-2 flex flex-wrap gap-4 text-sm">
-          <a href={`/admin/events/${eventId}/live`} className="text-brand-purple underline">
+        <div className="mt-3 flex flex-wrap gap-1 text-sm">
+          <a href={`/admin/events/${eventId}/live`} className={button.ghost}>
             Live auction board
           </a>
-          <a href={`/admin/events/${eventId}/clerk`} className="text-brand-purple underline">
+          <a href={`/admin/events/${eventId}/clerk`} className={button.ghost}>
             Live auction clerk
           </a>
-          <a href={`/admin/events/${eventId}/checkout`} className="text-brand-purple underline">
+          <a href={`/admin/events/${eventId}/checkout`} className={button.ghost}>
             Checkout
           </a>
-          <Link href="/bid" className="text-brand-purple underline">
+          <Link href="/bid" className={button.ghost}>
             Bidder view
           </Link>
-          <a href={`/admin/events/${eventId}/import`} className="text-brand-purple underline">
+          <a href={`/admin/events/${eventId}/import`} className={button.ghost}>
             Import spreadsheet
           </a>
-          <a href={`/admin/events/${eventId}/solicitations`} className="text-brand-purple underline">
+          <a href={`/admin/events/${eventId}/solicitations`} className={button.ghost}>
             Solicitations
           </a>
-          <a href={`/admin/events/${eventId}/donations/new`} className="text-brand-purple underline">
+          <a href={`/admin/events/${eventId}/donations/new`} className={button.ghost}>
             Log a donation
           </a>
         </div>
@@ -82,38 +83,28 @@ export default async function EventDetailPage({
       <section>
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-xl font-semibold">Item catalog</h2>
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <a
-              className="text-brand-purple underline"
-              href={`/api/admin/events/${eventId}/givesmart-export`}
-            >
+          <div className="flex flex-wrap items-center gap-1 text-sm">
+            <a className={button.ghost} href={`/api/admin/events/${eventId}/givesmart-export`}>
               Export for GiveSmart
             </a>
-            <a
-              className="text-brand-purple underline"
-              href={`/api/admin/auction-items?eventId=${eventId}&format=csv`}
-            >
+            <a className={button.ghost} href={`/api/admin/auction-items?eventId=${eventId}&format=csv`}>
               Export CSV
             </a>
           </div>
         </div>
         <form className="mt-3 flex flex-wrap items-end gap-3 text-sm" action={`/admin/events/${eventId}`}>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Search</label>
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Search</label>
             <input
               name="q"
               defaultValue={q ?? ""}
               placeholder="Title, description, item #"
-              className="w-56 rounded border border-neutral-300 px-2 py-1"
+              className={`w-56 ${input}`}
             />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Category</label>
-            <select
-              name="category"
-              defaultValue={category ?? ""}
-              className="rounded border border-neutral-300 px-2 py-1"
-            >
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Category</label>
+            <select name="category" defaultValue={category ?? ""} className={input}>
               <option value="">All categories</option>
               {itemCategories.map((c) => (
                 <option key={c} value={c}>
@@ -122,144 +113,114 @@ export default async function EventDetailPage({
               ))}
             </select>
           </div>
-          <button type="submit" className="rounded border border-brand-purple px-3 py-1.5 text-brand-purple transition-colors hover:bg-brand-lavender-tint">
+          <button type="submit" className={button.secondary}>
             Filter
           </button>
           {(category || q) && (
-            <a href={`/admin/events/${eventId}`} className="text-neutral-500 underline">
+            <a href={`/admin/events/${eventId}`} className={button.ghost}>
               Clear
             </a>
           )}
         </form>
-        <table className="mt-4 w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-neutral-300 text-left">
-              <th className="py-2 pr-4"></th>
-              <th className="py-2 pr-4">#</th>
-              <th className="py-2 pr-4">Title</th>
-              <th className="py-2 pr-4">Category</th>
-              <th className="py-2 pr-4">Type</th>
-              <th className="py-2 pr-4">FMV</th>
-              <th className="py-2 pr-4">Status</th>
-              <th className="py-2 pr-4"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {auctionItems.map((item) => (
-              <tr key={item.id} className="border-b border-neutral-100 align-top">
-                <td className="py-2 pr-4">
-                  {item.images[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={item.images[0]}
-                      alt=""
-                      className="h-10 w-10 rounded object-cover"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded bg-neutral-100" />
-                  )}
-                </td>
-                <td className="py-2 pr-4">{item.itemNumber}</td>
-                <td className="py-2 pr-4">{item.title}</td>
-                <td className="py-2 pr-4">{item.category ?? "—"}</td>
-                <td className="py-2 pr-4">{item.itemType}</td>
-                <td className="py-2 pr-4">{formatCents(item.fmvCents)}</td>
-                <td className="py-2 pr-4">{item.status}</td>
-                <td className="py-2 pr-4">
-                  <div className="flex flex-col gap-2">
-                    {item.fmvCents === null && (
-                      <form
-                        action={setAuctionItemFmvAction}
-                        className="flex items-center gap-1"
-                      >
-                        <input type="hidden" name="eventId" value={eventId} />
-                        <input type="hidden" name="itemId" value={item.id} />
-                        <input
-                          name="fmvDollars"
-                          type="number"
-                          step="0.01"
-                          min={0}
-                          placeholder="FMV $"
-                          required
-                          className="w-20 rounded border border-neutral-300 px-1 py-0.5"
-                        />
-                        <input
-                          name="fmvBasis"
-                          placeholder="basis"
-                          required
-                          className="w-28 rounded border border-neutral-300 px-1 py-0.5"
-                        />
-                        <input
-                          name="actorId"
-                          placeholder="your name"
-                          required
-                          className="w-24 rounded border border-neutral-300 px-1 py-0.5"
-                        />
-                        <button className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-2 py-0.5 text-white">
-                          Set FMV
-                        </button>
-                      </form>
-                    )}
-                    {item.fmvCents !== null && item.status === "DRAFT" && (
-                      <form action={openAuctionItemAction} className="flex items-center gap-1">
-                        <input type="hidden" name="eventId" value={eventId} />
-                        <input type="hidden" name="itemId" value={item.id} />
-                        <input
-                          name="actorId"
-                          placeholder="your name"
-                          required
-                          className="w-24 rounded border border-neutral-300 px-1 py-0.5"
-                        />
-                        <button className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-2 py-0.5 text-white">
-                          Open
-                        </button>
-                      </form>
-                    )}
-                    {item.status === "OPEN" && (
-                      <form action={closeAuctionItemAction} className="flex items-center gap-1">
-                        <input type="hidden" name="eventId" value={eventId} />
-                        <input type="hidden" name="itemId" value={item.id} />
-                        <input
-                          name="actorId"
-                          placeholder="your name"
-                          required
-                          className="w-24 rounded border border-neutral-300 px-1 py-0.5"
-                        />
-                        <button className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-2 py-0.5 text-white">
-                          Close
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                </td>
+        <div className={`mt-4 ${table.wrapper}`}>
+          <table className={table.table}>
+            <thead>
+              <tr className={table.headRow}>
+                <th className={table.th}></th>
+                <th className={table.th}>#</th>
+                <th className={table.th}>Title</th>
+                <th className={table.th}>Category</th>
+                <th className={table.th}>Type</th>
+                <th className={table.th}>FMV</th>
+                <th className={table.th}>Status</th>
+                <th className={table.th}></th>
               </tr>
-            ))}
-            {auctionItems.length === 0 && (
-              <tr>
-                <td colSpan={8} className="py-4 text-neutral-500">
-                  No items yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {auctionItems.map((item) => (
+                <tr key={item.id} className={table.row}>
+                  <td className={table.td}>
+                    {item.images[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.images[0]}
+                        alt=""
+                        className="h-10 w-10 rounded-md object-cover"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-md bg-neutral-100" />
+                    )}
+                  </td>
+                  <td className={table.td}>{item.itemNumber}</td>
+                  <td className={table.td}>{item.title}</td>
+                  <td className={table.td}>{item.category ?? "—"}</td>
+                  <td className={table.td}>{item.itemType}</td>
+                  <td className={table.td}>{formatCents(item.fmvCents)}</td>
+                  <td className={table.td}>{item.status}</td>
+                  <td className={table.td}>
+                    <div className="flex flex-col gap-2">
+                      {item.fmvCents === null && (
+                        <form action={setAuctionItemFmvAction} className="flex items-center gap-1">
+                          <input type="hidden" name="eventId" value={eventId} />
+                          <input type="hidden" name="itemId" value={item.id} />
+                          <input
+                            name="fmvDollars"
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            placeholder="FMV $"
+                            required
+                            className={`w-20 ${input}`}
+                          />
+                          <input name="fmvBasis" placeholder="basis" required className={`w-28 ${input}`} />
+                          <input name="actorId" placeholder="your name" required className={`w-24 ${input}`} />
+                          <button className={button.primary}>Set FMV</button>
+                        </form>
+                      )}
+                      {item.fmvCents !== null && item.status === "DRAFT" && (
+                        <form action={openAuctionItemAction} className="flex items-center gap-1">
+                          <input type="hidden" name="eventId" value={eventId} />
+                          <input type="hidden" name="itemId" value={item.id} />
+                          <input name="actorId" placeholder="your name" required className={`w-24 ${input}`} />
+                          <button className={button.primary}>Open</button>
+                        </form>
+                      )}
+                      {item.status === "OPEN" && (
+                        <form action={closeAuctionItemAction} className="flex items-center gap-1">
+                          <input type="hidden" name="eventId" value={eventId} />
+                          <input type="hidden" name="itemId" value={item.id} />
+                          <input name="actorId" placeholder="your name" required className={`w-24 ${input}`} />
+                          <button className={button.primary}>Close</button>
+                        </form>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {auctionItems.length === 0 && (
+                <tr>
+                  <td colSpan={8} className={table.empty}>
+                    No items yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        <form
-          action={createAuctionItemAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
-        >
+        <form action={createAuctionItemAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
           <input type="hidden" name="eventId" value={eventId} />
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Item #</label>
-            <input name="itemNumber" required className="w-20 rounded border border-neutral-300 px-2 py-1" />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Item #</label>
+            <input name="itemNumber" required className={`w-20 ${input}`} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Title</label>
-            <input name="title" required className="rounded border border-neutral-300 px-2 py-1" />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Title</label>
+            <input name="title" required className={input} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Type</label>
-            <select name="itemType" required className="rounded border border-neutral-300 px-2 py-1">
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Type</label>
+            <select name="itemType" required className={input}>
               <option value="SILENT">Silent</option>
               <option value="LIVE">Live</option>
               <option value="RAFFLE">Raffle</option>
@@ -267,15 +228,15 @@ export default async function EventDetailPage({
               <option value="FUND_A_NEED">Fund a need</option>
             </select>
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">FMV $ (optional now)</label>
-            <input name="fmvDollars" type="number" step="0.01" min={0} className="w-24 rounded border border-neutral-300 px-2 py-1" />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>FMV $ (optional now)</label>
+            <input name="fmvDollars" type="number" step="0.01" min={0} className={`w-24 ${input}`} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">FMV basis</label>
-            <input name="fmvBasis" className="w-32 rounded border border-neutral-300 px-2 py-1" />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>FMV basis</label>
+            <input name="fmvBasis" className={`w-32 ${input}`} />
           </div>
-          <button type="submit" className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-3 py-1.5 text-white">
+          <button type="submit" className={button.primary}>
             Add item
           </button>
         </form>
@@ -289,53 +250,49 @@ export default async function EventDetailPage({
       <section>
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Item donors</h2>
-          <a
-            className="text-sm text-brand-purple underline"
-            href={`/api/admin/item-donors?eventId=${eventId}&format=csv`}
-          >
+          <a className={button.ghost} href={`/api/admin/item-donors?eventId=${eventId}&format=csv`}>
             Export CSV
           </a>
         </div>
-        <table className="mt-4 w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-neutral-300 text-left">
-              <th className="py-2 pr-4">Donor</th>
-              <th className="py-2 pr-4">Claimed value</th>
-              <th className="py-2 pr-4">8283 needed</th>
-              <th className="py-2 pr-4">8283 received</th>
-            </tr>
-          </thead>
-          <tbody>
-            {itemDonors.map((donor) => (
-              <tr key={donor.id} className="border-b border-neutral-100">
-                <td className="py-2 pr-4">{constituentName(donor.constituentId)}</td>
-                <td className="py-2 pr-4">{formatCents(donor.claimedValueCents)}</td>
-                <td className="py-2 pr-4">{donor.substantiationNeeded ? "Yes" : "No"}</td>
-                <td className="py-2 pr-4">
-                  {donor.form8283ReceivedAt
-                    ? donor.form8283ReceivedAt.toISOString().slice(0, 10)
-                    : "—"}
-                </td>
+        <div className={`mt-4 ${table.wrapper}`}>
+          <table className={table.table}>
+            <thead>
+              <tr className={table.headRow}>
+                <th className={table.th}>Donor</th>
+                <th className={table.th}>Claimed value</th>
+                <th className={table.th}>8283 needed</th>
+                <th className={table.th}>8283 received</th>
               </tr>
-            ))}
-            {itemDonors.length === 0 && (
-              <tr>
-                <td colSpan={4} className="py-4 text-neutral-500">
-                  No item donors recorded yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {itemDonors.map((donor) => (
+                <tr key={donor.id} className={table.row}>
+                  <td className={table.td}>{constituentName(donor.constituentId)}</td>
+                  <td className={table.td}>{formatCents(donor.claimedValueCents)}</td>
+                  <td className={table.td}>{donor.substantiationNeeded ? "Yes" : "No"}</td>
+                  <td className={table.td}>
+                    {donor.form8283ReceivedAt
+                      ? donor.form8283ReceivedAt.toISOString().slice(0, 10)
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+              {itemDonors.length === 0 && (
+                <tr>
+                  <td colSpan={4} className={table.empty}>
+                    No item donors recorded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        <form
-          action={createItemDonorAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
-        >
+        <form action={createItemDonorAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
           <input type="hidden" name="eventId" value={eventId} />
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Donor</label>
-            <select name="constituentId" required className="rounded border border-neutral-300 px-2 py-1">
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Donor</label>
+            <select name="constituentId" required className={input}>
               {constituents.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.isBusiness ? c.orgName : `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}
@@ -343,26 +300,22 @@ export default async function EventDetailPage({
               ))}
             </select>
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Claimed value $</label>
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Claimed value $</label>
             <input
               name="claimedValueDollars"
               type="number"
               step="0.01"
               min={0}
               required
-              className="w-28 rounded border border-neutral-300 px-2 py-1"
+              className={`w-28 ${input}`}
             />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Your name</label>
-            <input name="actorId" required className="w-32 rounded border border-neutral-300 px-2 py-1" />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Your name</label>
+            <input name="actorId" required className={`w-32 ${input}`} />
           </div>
-          <button
-            type="submit"
-            disabled={constituents.length === 0}
-            className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-3 py-1.5 text-white"
-          >
+          <button type="submit" disabled={constituents.length === 0} className={button.primary}>
             Add item donor
           </button>
         </form>
@@ -372,67 +325,63 @@ export default async function EventDetailPage({
       <section>
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Constituents</h2>
-          <a
-            className="text-sm text-brand-purple underline"
-            href={`/api/admin/constituents?orgId=${event.orgId}&format=csv`}
-          >
+          <a className={button.ghost} href={`/api/admin/constituents?orgId=${event.orgId}&format=csv`}>
             Export CSV
           </a>
         </div>
-        <table className="mt-4 w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-neutral-300 text-left">
-              <th className="py-2 pr-4">Name</th>
-              <th className="py-2 pr-4">Email</th>
-              <th className="py-2 pr-4">Business</th>
-            </tr>
-          </thead>
-          <tbody>
-            {constituents.map((c) => (
-              <tr key={c.id} className="border-b border-neutral-100">
-                <td className="py-2 pr-4">
-                  {c.isBusiness ? c.orgName : `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}
-                </td>
-                <td className="py-2 pr-4">{c.email ?? "—"}</td>
-                <td className="py-2 pr-4">{c.isBusiness ? "Yes" : "No"}</td>
+        <div className={`mt-4 ${table.wrapper}`}>
+          <table className={table.table}>
+            <thead>
+              <tr className={table.headRow}>
+                <th className={table.th}>Name</th>
+                <th className={table.th}>Email</th>
+                <th className={table.th}>Business</th>
               </tr>
-            ))}
-            {constituents.length === 0 && (
-              <tr>
-                <td colSpan={3} className="py-4 text-neutral-500">
-                  No constituents yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {constituents.map((c) => (
+                <tr key={c.id} className={table.row}>
+                  <td className={table.td}>
+                    {c.isBusiness ? c.orgName : `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}
+                  </td>
+                  <td className={table.td}>{c.email ?? "—"}</td>
+                  <td className={table.td}>{c.isBusiness ? "Yes" : "No"}</td>
+                </tr>
+              ))}
+              {constituents.length === 0 && (
+                <tr>
+                  <td colSpan={3} className={table.empty}>
+                    No constituents yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        <form
-          action={createConstituentAction}
-          className="mt-4 flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4"
-        >
+        <form action={createConstituentAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
           <input type="hidden" name="orgId" value={event.orgId} />
           <input type="hidden" name="eventId" value={eventId} />
-          <label className="flex items-center gap-1 text-xs text-neutral-500">
+          <label className="flex items-center gap-1.5 text-xs text-neutral-500">
             <input type="checkbox" name="isBusiness" /> Business donor
           </label>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">First name</label>
-            <input name="firstName" className="rounded border border-neutral-300 px-2 py-1" />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>First name</label>
+            <input name="firstName" className={input} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Last name</label>
-            <input name="lastName" className="rounded border border-neutral-300 px-2 py-1" />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Last name</label>
+            <input name="lastName" className={input} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Org name (business)</label>
-            <input name="orgName" className="rounded border border-neutral-300 px-2 py-1" />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Org name (business)</label>
+            <input name="orgName" className={input} />
           </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Email</label>
-            <input name="email" type="email" className="rounded border border-neutral-300 px-2 py-1" />
+          <div className="flex flex-col gap-1">
+            <label className={labelClass}>Email</label>
+            <input name="email" type="email" className={input} />
           </div>
-          <button type="submit" className="rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark px-3 py-1.5 text-white">
+          <button type="submit" className={button.primary}>
             Add constituent
           </button>
         </form>

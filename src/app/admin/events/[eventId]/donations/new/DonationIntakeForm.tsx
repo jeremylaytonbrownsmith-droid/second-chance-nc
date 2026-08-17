@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CameraIcon } from "../../../../icons";
+import { button, card, input, label as labelClass } from "../../../../ui";
 
 const MAX_PHOTOS = 3;
 const MAX_DIMENSION = 900;
@@ -150,7 +151,7 @@ export function DonationIntakeForm({
 
   if (result) {
     return (
-      <div className="max-w-xl rounded border border-green-200 bg-green-50 p-5">
+      <div className="max-w-xl rounded-xl border border-green-200 bg-green-50 p-5 shadow-sm">
         <h2 className="font-semibold text-green-900">Donation logged</h2>
         <p className="mt-1 text-sm text-green-800">
           {title || "The item"} is now in the catalog as item #{itemNumber}, with an
@@ -158,7 +159,7 @@ export function DonationIntakeForm({
           from the item catalog before it opens for bidding.
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
-          <a href={`/admin/events/${eventId}`} className="text-brand-purple underline">
+          <a href={`/admin/events/${eventId}`} className={button.secondary}>
             View item catalog
           </a>
           <button
@@ -170,7 +171,7 @@ export function DonationIntakeForm({
               setValueDollars("");
               setItemNumber(`D${Number(suggestedItemNumber.replace("D", "")) + 1}`);
             }}
-            className="text-brand-purple underline"
+            className={button.ghost}
           >
             Log another donation
           </button>
@@ -180,12 +181,12 @@ export function DonationIntakeForm({
   }
 
   return (
-    <div className="max-w-xl space-y-5 rounded border border-brand-lavender bg-white p-5">
+    <div className={`max-w-xl space-y-5 ${card}`}>
       <div>
-        <label className="block text-xs text-neutral-500">Photos (up to {MAX_PHOTOS})</label>
+        <label className={`block ${labelClass}`}>Photos (up to {MAX_PHOTOS})</label>
         <div className="mt-2 flex flex-wrap gap-3">
           {photos.map((src, i) => (
-            <div key={i} className="relative h-24 w-24 overflow-hidden rounded border border-neutral-300">
+            <div key={i} className="relative h-24 w-24 overflow-hidden rounded-lg border border-neutral-300">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt={`Donation photo ${i + 1}`} className="h-full w-full object-cover" />
               <button
@@ -198,7 +199,7 @@ export function DonationIntakeForm({
             </div>
           ))}
           {photos.length < MAX_PHOTOS && (
-            <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded border border-dashed border-neutral-300 text-neutral-500 transition-colors hover:border-brand-purple hover:text-brand-purple">
+            <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-neutral-300 text-neutral-500 transition-colors hover:border-brand-purple hover:text-brand-purple">
               <CameraIcon />
               <span className="text-xs">Add photo</span>
               <input
@@ -217,21 +218,21 @@ export function DonationIntakeForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Item #</label>
+          <label className={labelClass}>Item #</label>
           <input
             value={itemNumber}
             onChange={(e) => setItemNumber(e.target.value)}
-            className="rounded border border-neutral-300 px-2 py-1"
+            className={input}
           />
         </div>
         <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Category</label>
+          <label className={labelClass}>Category</label>
           <input
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             list="donation-categories"
             placeholder="e.g. Getaways"
-            className="rounded border border-neutral-300 px-2 py-1"
+            className={input}
           />
           <datalist id="donation-categories">
             {categories.map((c) => (
@@ -242,34 +243,34 @@ export function DonationIntakeForm({
       </div>
 
       <div className="flex flex-col">
-        <label className="text-xs text-neutral-500">Title</label>
+        <label className={labelClass}>Title</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Weekend at the Lake House"
-          className="rounded border border-neutral-300 px-2 py-1"
+          className={input}
         />
       </div>
 
       <div className="flex flex-col">
-        <label className="text-xs text-neutral-500">Description</label>
+        <label className={labelClass}>Description</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
-          className="rounded border border-neutral-300 px-2 py-1"
+          className={input}
         />
       </div>
 
       <div className="flex flex-col">
-        <label className="text-xs text-neutral-500">Estimated value ($)</label>
+        <label className={labelClass}>Estimated value ($)</label>
         <input
           value={valueDollars}
           onChange={(e) => setValueDollars(e.target.value)}
           type="number"
           step="0.01"
           min={0}
-          className="w-32 rounded border border-neutral-300 px-2 py-1"
+          className={`w-32 ${input}`}
         />
         <p className="mt-1 text-xs text-neutral-400">
           Used as both the item&rsquo;s FMV and the donor&rsquo;s claimed value —
@@ -284,48 +285,48 @@ export function DonationIntakeForm({
         </label>
         <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">
+            <label className={labelClass}>
               {isBusiness ? "Business name" : "Donor name"}
             </label>
             <input
               value={donorName}
               onChange={(e) => setDonorName(e.target.value)}
-              className="rounded border border-neutral-300 px-2 py-1"
+              className={input}
             />
           </div>
           <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Email</label>
+            <label className={labelClass}>Email</label>
             <input
               value={donorEmail}
               onChange={(e) => setDonorEmail(e.target.value)}
               type="email"
-              className="rounded border border-neutral-300 px-2 py-1"
+              className={input}
             />
           </div>
           <div className="flex flex-col">
-            <label className="text-xs text-neutral-500">Phone</label>
+            <label className={labelClass}>Phone</label>
             <input
               value={donorPhone}
               onChange={(e) => setDonorPhone(e.target.value)}
-              className="rounded border border-neutral-300 px-2 py-1"
+              className={input}
             />
           </div>
         </div>
       </div>
 
       <div className="flex flex-col">
-        <label className="text-xs text-neutral-500">Your name</label>
+        <label className={labelClass}>Your name</label>
         <input
           value={actorId}
           onChange={(e) => setActorId(e.target.value)}
-          className="w-48 rounded border border-neutral-300 px-2 py-1"
+          className={`w-48 ${input}`}
         />
       </div>
 
       <button
         onClick={handleSubmit}
         disabled={submitting}
-        className="rounded bg-brand-purple px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-purple-dark disabled:opacity-50"
+        className={button.primary}
       >
         {submitting ? "Saving…" : "Save donation"}
       </button>

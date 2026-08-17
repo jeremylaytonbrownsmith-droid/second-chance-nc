@@ -23,7 +23,7 @@ export function ResetDemoButton() {
     <button
       onClick={handleClick}
       disabled={isPending}
-      className="rounded border border-brand-purple px-3 py-1 text-xs font-medium text-brand-purple transition-colors hover:bg-brand-purple hover:text-white disabled:opacity-50"
+      className="rounded-lg border border-brand-purple px-3 py-1.5 text-xs font-medium text-brand-purple shadow-sm transition-colors hover:bg-brand-purple hover:text-white disabled:opacity-50"
     >
       {isPending ? "Resetting…" : "Reset demo data"}
     </button>

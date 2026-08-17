@@ -36,7 +36,7 @@ export default function HelpPage() {
         run a gala with this, not for developers.
       </p>
 
-      <nav className="mt-6 rounded border border-brand-lavender bg-white p-4">
+      <nav className="mt-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
           On this page
         </p>

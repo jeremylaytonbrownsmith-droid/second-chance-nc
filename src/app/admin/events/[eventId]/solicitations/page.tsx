@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { listSolicitationCategories, listSolicitations } from "@/lib/admin/solicitations";
 import { createSolicitationAction, setSolicitationStatusAction } from "../../../actions";
 import { SolicitationImportUploader } from "./SolicitationImportUploader";
+import { button, card, input, label as labelClass, table } from "../../../ui";
 
 function formatCents(cents: number | null): string {
   if (cents === null) return "—";
@@ -72,17 +73,14 @@ export default async function SolicitationsPage({
           in yet — the list that exists before an item ever hits the catalog.{" "}
           {total.toLocaleString()} total.
         </p>
-        <div className="mt-2 flex flex-wrap gap-4 text-sm">
-          <a href={`/admin/events/${eventId}`} className="text-brand-purple underline">
+        <div className="mt-3 flex flex-wrap gap-1 text-sm">
+          <a href={`/admin/events/${eventId}`} className={button.ghost}>
             Item catalog
           </a>
-          <a href={`/admin/events/${eventId}/donations/new`} className="text-brand-purple underline">
+          <a href={`/admin/events/${eventId}/donations/new`} className={button.ghost}>
             Log a donation
           </a>
-          <a
-            className="text-brand-purple underline"
-            href={`/api/admin/solicitations?eventId=${eventId}&format=csv`}
-          >
+          <a className={button.ghost} href={`/api/admin/solicitations?eventId=${eventId}&format=csv`}>
             Export CSV
           </a>
         </div>
@@ -91,23 +89,19 @@ export default async function SolicitationsPage({
         </div>
       </div>
 
-      <form className="flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4 text-sm">
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Search</label>
+      <form className={`flex flex-wrap items-end gap-3 text-sm ${card}`}>
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Search</label>
           <input
             name="q"
             defaultValue={q ?? ""}
             placeholder="Name, email, notes, solicitor"
-            className="w-56 rounded border border-neutral-300 px-2 py-1"
+            className={`w-56 ${input}`}
           />
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Category</label>
-          <select
-            name="category"
-            defaultValue={category ?? ""}
-            className="rounded border border-neutral-300 px-2 py-1"
-          >
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Category</label>
+          <select name="category" defaultValue={category ?? ""} className={input}>
             <option value="">All categories</option>
             {categories.map((c) => (
               <option key={c} value={c}>
@@ -116,13 +110,9 @@ export default async function SolicitationsPage({
             ))}
           </select>
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Status</label>
-          <select
-            name="status"
-            defaultValue={status ?? ""}
-            className="rounded border border-neutral-300 px-2 py-1"
-          >
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Status</label>
+          <select name="status" defaultValue={status ?? ""} className={input}>
             <option value="">All statuses</option>
             {Object.entries(STATUS_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
@@ -131,35 +121,32 @@ export default async function SolicitationsPage({
             ))}
           </select>
         </div>
-        <button
-          type="submit"
-          className="rounded border border-brand-purple px-3 py-1.5 text-brand-purple transition-colors hover:bg-brand-lavender-tint"
-        >
+        <button type="submit" className={button.secondary}>
           Filter
         </button>
         {(status || category || q) && (
-          <a href={filterBase} className="text-neutral-500 underline">
+          <a href={filterBase} className={button.ghost}>
             Clear
           </a>
         )}
       </form>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
+      <div className={table.wrapper}>
+        <table className={`min-w-[720px] ${table.table}`}>
           <thead>
-            <tr className="border-b border-neutral-300 text-left">
-              <th className="py-2 pr-4">Contact</th>
-              <th className="py-2 pr-4">Category</th>
-              <th className="py-2 pr-4">Assigned to</th>
-              <th className="py-2 pr-4">Est. value</th>
-              <th className="py-2 pr-4">Status</th>
-              <th className="py-2 pr-4"></th>
+            <tr className={table.headRow}>
+              <th className={table.th}>Contact</th>
+              <th className={table.th}>Category</th>
+              <th className={table.th}>Assigned to</th>
+              <th className={table.th}>Est. value</th>
+              <th className={table.th}>Status</th>
+              <th className={table.th}></th>
             </tr>
           </thead>
           <tbody>
             {solicitations.map((s) => (
-              <tr key={s.id} className="border-b border-neutral-100 align-top">
-                <td className="py-2 pr-4">
+              <tr key={s.id} className={table.row}>
+                <td className={table.td}>
                   <div className="font-medium">
                     {s.contactName}
                     {s.priorYearDonor && (
@@ -181,22 +168,22 @@ export default async function SolicitationsPage({
                   )}
                   {s.notes && <div className="mt-1 max-w-xs text-xs text-neutral-500">{s.notes}</div>}
                 </td>
-                <td className="py-2 pr-4">{s.category ?? "—"}</td>
-                <td className="py-2 pr-4">{s.assignedTo ?? "—"}</td>
-                <td className="py-2 pr-4">{formatCents(s.estimatedValueCents)}</td>
-                <td className="py-2 pr-4">
+                <td className={table.td}>{s.category ?? "—"}</td>
+                <td className={table.td}>{s.assignedTo ?? "—"}</td>
+                <td className={table.td}>{formatCents(s.estimatedValueCents)}</td>
+                <td className={table.td}>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[s.status]}`}
                   >
                     {STATUS_LABELS[s.status]}
                   </span>
                 </td>
-                <td className="py-2 pr-4">
-                  <div className="flex flex-wrap items-center gap-2">
+                <td className={table.td}>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     {s.status !== "DONATED" && s.status !== "DO_NOT_CONTACT" && (
                       <a
                         href={`/admin/events/${eventId}/donations/new?solicitationId=${s.id}&contactName=${encodeURIComponent(s.contactName)}&contactEmail=${encodeURIComponent(s.contactEmail ?? "")}&contactPhone=${encodeURIComponent(s.contactPhone ?? "")}&category=${encodeURIComponent(s.category ?? "")}`}
-                        className="text-brand-purple underline"
+                        className={button.tableAction}
                       >
                         Log donation
                       </a>
@@ -224,7 +211,7 @@ export default async function SolicitationsPage({
             ))}
             {solicitations.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-4 text-neutral-500">
+                <td colSpan={6} className={table.empty}>
                   No solicitations match this filter.
                 </td>
               </tr>
@@ -238,20 +225,14 @@ export default async function SolicitationsPage({
           <span className="text-neutral-500">
             Page {page} of {pageCount} — {total.toLocaleString()} solicitations
           </span>
-          <div className="flex gap-3">
+          <div className="flex gap-1">
             {page > 1 && (
-              <a
-                className="text-brand-purple underline"
-                href={`${filterBase}?${queryString({ page: String(page - 1) })}`}
-              >
+              <a className={button.ghost} href={`${filterBase}?${queryString({ page: String(page - 1) })}`}>
                 ← Previous
               </a>
             )}
             {page < pageCount && (
-              <a
-                className="text-brand-purple underline"
-                href={`${filterBase}?${queryString({ page: String(page + 1) })}`}
-              >
+              <a className={button.ghost} href={`${filterBase}?${queryString({ page: String(page + 1) })}`}>
                 Next →
               </a>
             )}
@@ -259,70 +240,49 @@ export default async function SolicitationsPage({
         </div>
       )}
 
-      <form
-        action={createSolicitationAction}
-        className="flex flex-wrap items-end gap-3 rounded border border-brand-lavender bg-white p-4 text-sm"
-      >
+      <form action={createSolicitationAction} className={`flex flex-wrap items-end gap-3 text-sm ${card}`}>
         <input type="hidden" name="eventId" value={eventId} />
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Contact / business name</label>
-          <input
-            name="contactName"
-            required
-            className="w-44 rounded border border-neutral-300 px-2 py-1"
-          />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Contact / business name</label>
+          <input name="contactName" required className={`w-44 ${input}`} />
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Email</label>
-          <input name="contactEmail" type="email" className="rounded border border-neutral-300 px-2 py-1" />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Email</label>
+          <input name="contactEmail" type="email" className={input} />
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Phone</label>
-          <input name="contactPhone" className="w-32 rounded border border-neutral-300 px-2 py-1" />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Phone</label>
+          <input name="contactPhone" className={`w-32 ${input}`} />
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Category</label>
-          <input
-            name="category"
-            list="category-suggestions"
-            placeholder="e.g. Restaurant"
-            className="w-36 rounded border border-neutral-300 px-2 py-1"
-          />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Category</label>
+          <input name="category" list="category-suggestions" placeholder="e.g. Restaurant" className={`w-36 ${input}`} />
           <datalist id="category-suggestions">
             {categories.map((c) => (
               <option key={c} value={c} />
             ))}
           </datalist>
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Assigned to</label>
-          <input name="assignedTo" placeholder="Solicitor" className="w-32 rounded border border-neutral-300 px-2 py-1" />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Assigned to</label>
+          <input name="assignedTo" placeholder="Solicitor" className={`w-32 ${input}`} />
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Est. value $</label>
-          <input
-            name="estimatedValueDollars"
-            type="number"
-            step="0.01"
-            min={0}
-            className="w-24 rounded border border-neutral-300 px-2 py-1"
-          />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Est. value $</label>
+          <input name="estimatedValueDollars" type="number" step="0.01" min={0} className={`w-24 ${input}`} />
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Status</label>
-          <select name="status" defaultValue="CONTACTED" className="rounded border border-neutral-300 px-2 py-1">
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Status</label>
+          <select name="status" defaultValue="CONTACTED" className={input}>
             <option value="PROSPECT">Prospect (not asked yet)</option>
             <option value="CONTACTED">Contacted</option>
           </select>
         </div>
-        <div className="flex flex-col">
-          <label className="text-xs text-neutral-500">Notes</label>
-          <input name="notes" className="w-40 rounded border border-neutral-300 px-2 py-1" />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Notes</label>
+          <input name="notes" className={`w-40 ${input}`} />
         </div>
-        <button
-          type="submit"
-          className="rounded bg-brand-purple px-3 py-1.5 text-white transition-colors hover:bg-brand-purple-dark"
-        >
+        <button type="submit" className={button.primary}>
           Add solicitation
         </button>
       </form>
@@ -346,7 +306,7 @@ function StatusForm({
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="solicitationId" value={solicitationId} />
       <input type="hidden" name="status" value={status} />
-      <button className="text-neutral-600 underline">{label}</button>
+      <button className={button.tableAction}>{label}</button>
     </form>
   );
 }

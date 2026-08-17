@@ -88,15 +88,15 @@ export function ClerkForm({ eventId }: { eventId: string }) {
   return (
     <div className="mx-auto max-w-xl">
       <div className="mb-4">
-        <label className="text-xs text-neutral-500">Clerk name (for the audit log)</label>
+        <label className="text-xs font-medium text-neutral-500">Clerk name (for the audit log)</label>
         <input
           value={clerkName}
           onChange={(e) => setClerkName(e.target.value)}
-          className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-lg"
+          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-lg shadow-sm transition-colors focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
         />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded border border-brand-lavender bg-white p-6">
+      <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
         <div>
           <label className="text-sm font-medium text-neutral-700">Item #</label>
           <input
@@ -105,7 +105,7 @@ export function ClerkForm({ eventId }: { eventId: string }) {
             onChange={(e) => setItemNumber(e.target.value)}
             required
             autoComplete="off"
-            className="mt-1 w-full rounded border border-neutral-300 px-4 py-3 text-2xl"
+            className="mt-1 w-full rounded-lg border border-neutral-300 px-4 py-3 text-2xl shadow-sm transition-colors focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
           />
         </div>
         <div>
@@ -116,7 +116,7 @@ export function ClerkForm({ eventId }: { eventId: string }) {
             type="number"
             required
             autoComplete="off"
-            className="mt-1 w-full rounded border border-neutral-300 px-4 py-3 text-2xl"
+            className="mt-1 w-full rounded-lg border border-neutral-300 px-4 py-3 text-2xl shadow-sm transition-colors focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
           />
         </div>
         <div>
@@ -129,13 +129,13 @@ export function ClerkForm({ eventId }: { eventId: string }) {
             min="0"
             required
             autoComplete="off"
-            className="mt-1 w-full rounded border border-neutral-300 px-4 py-3 text-2xl"
+            className="mt-1 w-full rounded-lg border border-neutral-300 px-4 py-3 text-2xl shadow-sm transition-colors focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
           />
         </div>
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded bg-brand-purple transition-colors hover:bg-brand-purple-dark py-3 text-xl font-semibold text-white disabled:opacity-50"
+          className="w-full rounded-lg bg-brand-purple py-3 text-xl font-semibold text-white shadow-sm transition-colors hover:bg-brand-purple-dark disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
         </button>
