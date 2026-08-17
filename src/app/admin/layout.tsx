@@ -52,6 +52,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             >
               Bidder view
             </Link>
+            <Link
+              href="/live"
+              className="rounded-md px-2.5 py-1.5 font-medium text-neutral-600 transition-colors hover:bg-brand-lavender-tint hover:text-brand-purple-dark"
+            >
+              Live board
+            </Link>
             <span className="ml-1">
               <ResetDemoButton />
             </span>

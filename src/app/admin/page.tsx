@@ -14,6 +14,7 @@ import {
   GavelIcon,
   MonitorIcon,
   PlayCircleIcon,
+  PulseIcon,
   SyncIcon,
   UploadIcon,
 } from "./icons";
@@ -86,6 +87,12 @@ export default async function AdminHomePage() {
             icon={<DeviceMobileIcon />}
             title="Bidder View"
             description="Mobile browse + live bidding, updates in real time"
+          />
+          <HubCard
+            href="/live"
+            icon={<PulseIcon />}
+            title="Live Event Board"
+            description="The screen for the room — every price live, no bidder login needed to watch"
           />
           <HubCard
             href="/admin/sync-log"

@@ -161,6 +161,14 @@ export default function HelpPage() {
             screen the instant someone bids — no refreshing.
           </P>
           <P>
+            <strong>Live Event Board</strong> — the screen for the room, not for one bidder.
+            No picking a name first — just every item&rsquo;s photo, current price, and who&rsquo;s
+            leading, plus a running feed of bids as they land. Put it on a TV at the venue,
+            or let guests pull it up on their own phones to watch without needing to bid
+            themselves. The Live Auction Board in the admin nav is the staff/operator
+            version of this same idea.
+          </P>
+          <P>
             <strong>Live Auction Clerk</strong> — for the live-auction portion where an
             auctioneer calls out winners by paddle number. One screen: item number, paddle
             number, hammer price, next. Built to be usable by a volunteer with ten minutes

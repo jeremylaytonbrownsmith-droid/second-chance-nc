@@ -122,6 +122,14 @@ export function ClipboardListIcon() {
   );
 }
 
+export function PulseIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <path d="M3 12h3.5l2-6 3.5 12 2.5-9 1.5 3H21" />
+    </svg>
+  );
+}
+
 export function CameraIcon() {
   return (
     <svg {...common} className="h-6 w-6" aria-hidden>

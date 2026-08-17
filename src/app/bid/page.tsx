@@ -22,6 +22,12 @@ export default async function BidderPickerPage() {
         <p className="mt-1 text-sm text-neutral-600">
           Pick a bidder to simulate their phone during the auction.
         </p>
+        <Link
+          href="/live"
+          className="mt-3 inline-block text-sm text-brand-purple underline"
+        >
+          Just want to watch? See the live event board →
+        </Link>
         <div className="mt-6 space-y-3">
           {registrations.map((reg) => (
             <Link
