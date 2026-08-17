@@ -130,10 +130,15 @@ export default function HelpPage() {
           <P>
             Before there&rsquo;s a catalog, there&rsquo;s an ask list — the businesses and
             individuals staff have reached out to, weeks or months before the event. The{" "}
-            <strong>Solicitations</strong> screen tracks that: a contact, a category, and a
-            status (Prospect, Asked, Declined, or Donated), searchable and filterable by
-            both. Nothing here is a real donor record yet — it&rsquo;s deliberately
-            lightweight, since most asks don&rsquo;t convert.
+            <strong>Solicitations</strong> screen tracks that: a contact, one or more
+            category tags, who on the team is working it, and a status — Prospect,
+            Contacted, Committed, Donated, Declined, or Do Not Contact (a permanent
+            suppression flag, separate from a plain decline, for a closed business or a
+            relationship the org doesn&rsquo;t want re-approached) — all searchable and
+            filterable. Nothing here is a real donor record yet — it&rsquo;s deliberately
+            lightweight, since most asks don&rsquo;t convert. This status vocabulary was
+            built directly from the organization&rsquo;s own multi-year outreach
+            spreadsheet, not guessed at.
           </P>
           <P>
             When something actually comes in, use <strong>Log a Donation</strong> — built

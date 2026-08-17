@@ -4,7 +4,6 @@ import {
   AuctionItemType,
   EventStatus,
   RegistrationStatus,
-  SolicitationStatus,
 } from "@prisma/client";
 
 /**
@@ -13,74 +12,89 @@ import {
  * returns it to a known state. Never mixed with real donor data — every
  * row created here belongs to an Organization/Event with isDemo: true,
  * and every screen that reads demo data must show the demo banner.
+ *
+ * The Organization/Event themselves are STABLE across resets (update in
+ * place, not delete-and-recreate) — real staff data (the Solicitation
+ * list, in particular) lives under this event and must survive a reset,
+ * not just the seeded bidding/checkout furniture. Only the transactional
+ * demo state gets wiped and rebuilt each time.
  */
 
 const DEMO_ORG_NAME = "Second Chance Pet Adoptions (Demo)";
 
-/** Wipes any existing demo org and everything under it, then recreates a
- * fresh, fully-populated demo event. Safe to call repeatedly. */
+/** Resets the transactional/bidding demo state (items, bids, checkouts,
+ * registrations) to a known-good starting point. The demo Organization and
+ * Event are found-or-created once and then updated in place on every call
+ * — their ids stay stable so real data attached to the event (imported
+ * Solicitations, for instance) is never orphaned by a reset. Safe to call
+ * repeatedly. */
 export async function resetDemoData() {
-  const existing = await prisma.organization.findFirst({
+  let org = await prisma.organization.findFirst({
     where: { isDemo: true, name: DEMO_ORG_NAME },
-    include: { events: true },
   });
-
-  if (existing) {
-    const eventIds = existing.events.map((e) => e.id);
-    // SyncLog.localId holds transaction ids, not event ids — collect them
-    // before the transactions themselves are deleted below, or the old
-    // sync log rows are orphaned and pile up across every reset instead
-    // of clearing.
-    const transactionIds = (
-      await prisma.transaction.findMany({
-        where: { eventId: { in: eventIds } },
-        select: { id: true },
-      })
-    ).map((t) => t.id);
-
-    await prisma.transactionLine.deleteMany({
-      where: { transaction: { eventId: { in: eventIds } } },
+  if (!org) {
+    org = await prisma.organization.create({
+      data: { name: DEMO_ORG_NAME, ein: "00-0000000", fiscalYearStart: 1, isDemo: true },
     });
-    await prisma.transaction.deleteMany({ where: { eventId: { in: eventIds } } });
-    await prisma.bid.deleteMany({ where: { item: { eventId: { in: eventIds } } } });
-    await prisma.award.deleteMany({ where: { item: { eventId: { in: eventIds } } } });
-    // Solicitation.fulfilledAuctionItemId references AuctionItem, so this
-    // has to clear before the auction items themselves are deleted below.
-    await prisma.solicitation.deleteMany({ where: { eventId: { in: eventIds } } });
-    await prisma.auctionItem.deleteMany({ where: { eventId: { in: eventIds } } });
-    await prisma.itemDonor.deleteMany({ where: { eventId: { in: eventIds } } });
-    await prisma.registration.deleteMany({ where: { eventId: { in: eventIds } } });
-    await prisma.constituent.deleteMany({ where: { orgId: existing.id } });
-    await prisma.event.deleteMany({ where: { orgId: existing.id } });
-    await prisma.syncLog.deleteMany({
-      where: {
-        entityType: "GIFT",
-        localId: { in: transactionIds.length ? transactionIds : ["__none__"] },
-      },
-    });
-    await prisma.organization.delete({ where: { id: existing.id } });
   }
-
-  const org = await prisma.organization.create({
-    data: {
-      name: DEMO_ORG_NAME,
-      ein: "00-0000000",
-      fiscalYearStart: 1,
-      isDemo: true,
-    },
-  });
 
   const eventDate = new Date();
   eventDate.setUTCDate(eventDate.getUTCDate() + 30);
 
-  const event = await prisma.event.create({
-    data: {
-      orgId: org.id,
-      name: "2027 Evening of Pawsibilities (Demo)",
-      eventDate,
-      taxYear: eventDate.getUTCFullYear(),
-      status: EventStatus.OPEN,
-      isDemo: true,
+  let event = await prisma.event.findFirst({ where: { orgId: org.id, isDemo: true } });
+  if (event) {
+    event = await prisma.event.update({
+      where: { id: event.id },
+      data: {
+        name: "2027 Evening of Pawsibilities (Demo)",
+        eventDate,
+        taxYear: eventDate.getUTCFullYear(),
+        status: EventStatus.OPEN,
+      },
+    });
+  } else {
+    event = await prisma.event.create({
+      data: {
+        orgId: org.id,
+        name: "2027 Evening of Pawsibilities (Demo)",
+        eventDate,
+        taxYear: eventDate.getUTCFullYear(),
+        status: EventStatus.OPEN,
+        isDemo: true,
+      },
+    });
+  }
+
+  // SyncLog.localId holds transaction ids — collect them before the
+  // transactions themselves are deleted below, or the old sync log rows
+  // are orphaned and pile up across every reset instead of clearing.
+  const transactionIds = (
+    await prisma.transaction.findMany({ where: { eventId: event.id }, select: { id: true } })
+  ).map((t) => t.id);
+
+  await prisma.transactionLine.deleteMany({ where: { transaction: { eventId: event.id } } });
+  await prisma.transaction.deleteMany({ where: { eventId: event.id } });
+  await prisma.bid.deleteMany({ where: { item: { eventId: event.id } } });
+  await prisma.award.deleteMany({ where: { item: { eventId: event.id } } });
+  // Solicitations are NOT wiped here — real outreach data must survive a
+  // reset — but a DONATED one may point at an auction item that's about
+  // to be deleted below. Unlink rather than let the FK block the delete;
+  // the ask and its DONATED status are still real even once the demo
+  // catalog item itself cycles.
+  await prisma.solicitation.updateMany({
+    where: { eventId: event.id, fulfilledAuctionItemId: { not: null } },
+    data: { fulfilledAuctionItemId: null },
+  });
+  await prisma.auctionItem.deleteMany({ where: { eventId: event.id } });
+  await prisma.itemDonor.deleteMany({ where: { eventId: event.id } });
+  await prisma.registration.deleteMany({ where: { eventId: event.id } });
+  // Constituents (demo bidders/donors) belong to registrations and item
+  // donors above, not to Solicitation — safe to wipe and recreate.
+  await prisma.constituent.deleteMany({ where: { orgId: org.id } });
+  await prisma.syncLog.deleteMany({
+    where: {
+      entityType: "GIFT",
+      localId: { in: transactionIds.length ? transactionIds : ["__none__"] },
     },
   });
 
@@ -197,42 +211,9 @@ export async function resetDemoData() {
     }),
   ]);
 
-  // Section: the solicitation list — asks that haven't (yet) become
-  // catalog items. Demonstrates the search-by-category/status feedback
-  // this was built from; deliberately spans every status.
-  await Promise.all([
-    prisma.solicitation.create({
-      data: {
-        eventId: event.id,
-        contactName: "Riverside Grill",
-        contactEmail: "events@riversidegrill.demo",
-        category: "Restaurants",
-        status: SolicitationStatus.ASKED,
-        estimatedValueCents: 10_000,
-        notes: "Offered a $100 dinner-for-four gift card, waiting to hear back",
-      },
-    }),
-    prisma.solicitation.create({
-      data: {
-        eventId: event.id,
-        contactName: "Bright Paws Grooming",
-        contactPhone: "555-0170",
-        category: "Pet Services",
-        status: SolicitationStatus.PROSPECT,
-        notes: "On the list to call this week",
-      },
-    }),
-    prisma.solicitation.create({
-      data: {
-        eventId: event.id,
-        contactName: "Downtown Spa & Wellness",
-        contactEmail: "gifts@downtownspa.demo",
-        category: "Wellness",
-        status: SolicitationStatus.DECLINED,
-        notes: "Already committed to another gala this spring",
-      },
-    }),
-  ]);
+  // Solicitations are deliberately not reseeded here — they're real staff
+  // data (see resetDemoData's comment above) loaded once via
+  // scripts/import-solicitations.ts, not demo furniture rebuilt each run.
 
   const [reg1, reg2, reg3] = await Promise.all([
     prisma.registration.create({

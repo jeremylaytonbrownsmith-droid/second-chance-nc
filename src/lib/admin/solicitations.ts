@@ -21,7 +21,11 @@ export const createSolicitationSchema = z.object({
   category: z.string().trim().min(1).optional(),
   notes: z.string().trim().optional(),
   estimatedValueCents: z.number().int().min(0).optional(),
-  status: z.enum(SolicitationStatus).default(SolicitationStatus.ASKED),
+  status: z.enum(SolicitationStatus).default(SolicitationStatus.CONTACTED),
+  deliveryMethod: z.enum(["MAIL", "PICKUP", "DROPOFF", "DIGITAL"]).optional(),
+  assignedTo: z.string().trim().min(1).optional(),
+  lastContactedAt: z.coerce.date().optional(),
+  priorYearDonor: z.boolean().default(false),
 });
 
 export type CreateSolicitationInput = z.input<typeof createSolicitationSchema>;
@@ -32,26 +36,71 @@ export interface SolicitationFilters {
   search?: string;
 }
 
+function solicitationWhere(eventId: string, filters: SolicitationFilters) {
+  return {
+    eventId,
+    voidedAt: null,
+    ...(filters.status ? { status: filters.status } : {}),
+    // Category is stored as free text, often several comma-separated
+    // tags (real data: "Lodging, Mountains") — match on any one of them
+    // rather than requiring an exact full-string match.
+    ...(filters.category ? { category: { contains: filters.category, mode: "insensitive" as const } } : {}),
+    ...(filters.search
+      ? {
+          OR: [
+            { contactName: { contains: filters.search, mode: "insensitive" as const } },
+            { contactEmail: { contains: filters.search, mode: "insensitive" as const } },
+            { notes: { contains: filters.search, mode: "insensitive" as const } },
+            { assignedTo: { contains: filters.search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+}
+
+export const SOLICITATIONS_PAGE_SIZE = 50;
+
+export interface SolicitationPage {
+  solicitations: Solicitation[];
+  total: number;
+  page: number;
+  pageCount: number;
+}
+
+// Real usage is thousands of rows (a multi-year outreach list, not a
+// short seed list) — this always paginates rather than returning
+// everything, or the admin page would try to render it all in one shot.
 export async function listSolicitations(
+  eventId: string,
+  filters: SolicitationFilters = {},
+  page = 1,
+): Promise<SolicitationPage> {
+  const where = solicitationWhere(eventId, filters);
+  const safePage = Math.max(1, page);
+  const [solicitations, total] = await Promise.all([
+    prisma.solicitation.findMany({
+      where,
+      orderBy: [{ status: "asc" }, { contactName: "asc" }],
+      skip: (safePage - 1) * SOLICITATIONS_PAGE_SIZE,
+      take: SOLICITATIONS_PAGE_SIZE,
+    }),
+    prisma.solicitation.count({ where }),
+  ]);
+  return {
+    solicitations,
+    total,
+    page: safePage,
+    pageCount: Math.max(1, Math.ceil(total / SOLICITATIONS_PAGE_SIZE)),
+  };
+}
+
+/** Unpaginated — for CSV export only, never for rendering a page of UI. */
+export async function listAllSolicitationsForExport(
   eventId: string,
   filters: SolicitationFilters = {},
 ): Promise<Solicitation[]> {
   return prisma.solicitation.findMany({
-    where: {
-      eventId,
-      voidedAt: null,
-      ...(filters.status ? { status: filters.status } : {}),
-      ...(filters.category ? { category: filters.category } : {}),
-      ...(filters.search
-        ? {
-            OR: [
-              { contactName: { contains: filters.search, mode: "insensitive" } },
-              { contactEmail: { contains: filters.search, mode: "insensitive" } },
-              { notes: { contains: filters.search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
+    where: solicitationWhere(eventId, filters),
     orderBy: [{ status: "asc" }, { contactName: "asc" }],
   });
 }
@@ -60,10 +109,16 @@ export async function listSolicitationCategories(eventId: string): Promise<strin
   const rows = await prisma.solicitation.findMany({
     where: { eventId, voidedAt: null, category: { not: null } },
     select: { category: true },
-    distinct: ["category"],
-    orderBy: { category: "asc" },
   });
-  return rows.map((r) => r.category).filter((c): c is string => Boolean(c));
+  const tags = new Set<string>();
+  for (const row of rows) {
+    if (!row.category) continue;
+    for (const tag of row.category.split(",")) {
+      const trimmed = tag.trim();
+      if (trimmed) tags.add(trimmed);
+    }
+  }
+  return Array.from(tags).sort((a, b) => a.localeCompare(b));
 }
 
 export async function createSolicitation(
@@ -76,9 +131,12 @@ export async function createSolicitation(
   });
 }
 
+// DONATED is deliberately excluded here — it's only ever set by
+// logDonation, which also creates the ItemDonor/AuctionItem it links to.
+// Setting it through this path would leave that link dangling.
 export async function setSolicitationStatus(
   id: string,
-  status: Extract<SolicitationStatus, "PROSPECT" | "ASKED" | "DECLINED">,
+  status: Exclude<SolicitationStatus, "DONATED">,
 ): Promise<Solicitation> {
   return prisma.solicitation.update({ where: { id }, data: { status } });
 }
@@ -220,6 +278,10 @@ export const solicitationCsvColumns: CsvColumn<Solicitation>[] = [
   { header: "Contact Phone", value: (s) => s.contactPhone },
   { header: "Category", value: (s) => s.category },
   { header: "Status", value: (s) => s.status },
+  { header: "Delivery Method", value: (s) => s.deliveryMethod },
+  { header: "Assigned To", value: (s) => s.assignedTo },
+  { header: "Last Contacted", value: (s) => s.lastContactedAt },
+  { header: "Prior Year Donor", value: (s) => s.priorYearDonor },
   { header: "Estimated Value (cents)", value: (s) => s.estimatedValueCents },
   { header: "Notes", value: (s) => s.notes },
   { header: "Created At", value: (s) => s.createdAt },

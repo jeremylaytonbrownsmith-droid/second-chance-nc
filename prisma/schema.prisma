@@ -51,11 +51,25 @@ enum BidSource {
   AUCTIONEER
 }
 
+// Matches the real workflow vocabulary observed in the client's own
+// multi-year outreach spreadsheet (2,800+ rows), not an idealized guess —
+// their "Status" column collapses to roughly these six buckets, plus a
+// DO_NOT_CONTACT suppression state that's distinct from a plain decline
+// (a closed business or a relationship the org doesn't want re-approached).
 enum SolicitationStatus {
-  PROSPECT
-  ASKED
-  DECLINED
-  DONATED
+  PROSPECT // not yet contacted
+  CONTACTED // emailed / called / dropped off a flyer / online form — awaiting reply
+  COMMITTED // said yes, item not physically in hand yet
+  DONATED // item received
+  DECLINED // said no, business closed, email bounced — detail goes in notes
+  DO_NOT_CONTACT // suppression flag; skip on future asks regardless of year
+}
+
+enum SolicitationDeliveryMethod {
+  MAIL
+  PICKUP
+  DROPOFF
+  DIGITAL
 }
 
 enum TransactionStatus {
@@ -253,11 +267,25 @@ model Solicitation {
   contactName         String
   contactEmail        String?
   contactPhone        String?
+  // Free-text, often comma-separated tags in real use (e.g. "Lodging,
+  // Mountains") rather than a single value — category search matches
+  // against any one of them, not just an exact string.
   category            String?
   notes               String?
   estimatedValueCents Int?
 
-  status SolicitationStatus @default(PROSPECT)
+  status         SolicitationStatus          @default(PROSPECT)
+  deliveryMethod SolicitationDeliveryMethod?
+
+  // Who on the team is working this ask, and when they last touched it —
+  // "Solicitor" and "Date Solicited/Followed Up" in the real spreadsheet.
+  assignedTo      String?
+  lastContactedAt DateTime?
+
+  // Did this contact give in a recent prior year? Lets a solicitor spot a
+  // reliable repeat donor (or someone worth re-approaching) without a full
+  // cross-event giving history, which is a bigger feature than this needs.
+  priorYearDonor Boolean @default(false)
 
   fulfilledAuctionItemId String?      @unique
   fulfilledAuctionItem   AuctionItem? @relation(fields: [fulfilledAuctionItemId], references: [id])

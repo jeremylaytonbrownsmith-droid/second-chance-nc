@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SolicitationStatus } from "@prisma/client";
 import {
   createSolicitation,
+  listAllSolicitationsForExport,
   listSolicitations,
   solicitationCsvColumns,
 } from "@/lib/admin/solicitations";
@@ -25,9 +26,8 @@ export async function GET(request: NextRequest) {
       ? (statusParam as SolicitationStatus)
       : undefined;
 
-  const solicitations = await listSolicitations(eventId, { status, category, search });
-
   if (format === "csv") {
+    const solicitations = await listAllSolicitationsForExport(eventId, { status, category, search });
     return new NextResponse(toCsv(solicitations, solicitationCsvColumns), {
       headers: {
         "Content-Type": "text/csv",
@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  return NextResponse.json({ solicitations });
+  const page = Number(request.nextUrl.searchParams.get("page") ?? "1") || 1;
+  const result = await listSolicitations(eventId, { status, category, search }, page);
+  return NextResponse.json(result);
 }
 
 export async function POST(request: NextRequest) {

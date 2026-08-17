@@ -4,7 +4,7 @@ import { setSolicitationStatus } from "@/lib/admin/solicitations";
 import { toErrorResponse } from "@/lib/http/handle-error";
 
 const patchSchema = z.object({
-  status: z.enum(["PROSPECT", "ASKED", "DECLINED"]),
+  status: z.enum(["PROSPECT", "CONTACTED", "COMMITTED", "DECLINED", "DO_NOT_CONTACT"]),
 });
 
 export async function PATCH(

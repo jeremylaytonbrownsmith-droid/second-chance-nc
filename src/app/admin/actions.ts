@@ -137,7 +137,8 @@ export async function createSolicitationAction(formData: FormData) {
     category: str(formData, "category"),
     notes: str(formData, "notes"),
     estimatedValueCents: cents(formData, "estimatedValueDollars"),
-    status: (str(formData, "status") as SolicitationStatus) ?? "ASKED",
+    status: (str(formData, "status") as SolicitationStatus) ?? "CONTACTED",
+    assignedTo: str(formData, "assignedTo"),
   });
   revalidatePath(`/admin/events/${eventId}/solicitations`);
 }
@@ -146,7 +147,7 @@ export async function setSolicitationStatusAction(formData: FormData) {
   const eventId = String(formData.get("eventId"));
   await setSolicitationStatus(
     String(formData.get("solicitationId")),
-    formData.get("status") as "PROSPECT" | "ASKED" | "DECLINED",
+    formData.get("status") as Exclude<SolicitationStatus, "DONATED">,
   );
   revalidatePath(`/admin/events/${eventId}/solicitations`);
 }
