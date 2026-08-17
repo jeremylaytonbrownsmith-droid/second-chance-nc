@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { listSolicitationCategories, listSolicitations } from "@/lib/admin/solicitations";
 import { createSolicitationAction, setSolicitationStatusAction } from "../../../actions";
+import { SolicitationImportUploader } from "./SolicitationImportUploader";
 
 function formatCents(cents: number | null): string {
   if (cents === null) return "—";
@@ -84,6 +85,9 @@ export default async function SolicitationsPage({
           >
             Export CSV
           </a>
+        </div>
+        <div className="mt-3">
+          <SolicitationImportUploader eventId={eventId} />
         </div>
       </div>
 
