@@ -97,8 +97,50 @@ export function BidBoard({
     }
   }
 
+  const leadingItems = items.filter((it) => it.leadingBidderNumber === bidderNumber);
+  const totalLeadingCents = leadingItems.reduce((sum, it) => sum + it.currentAmountCents, 0);
+  const maxLeadingCents = Math.max(...leadingItems.map((it) => it.currentAmountCents), 1);
+
   return (
     <div className="space-y-4">
+      {items.length > 0 && (
+        <div className="rounded-2xl border border-brand-lavender/50 bg-white p-5 shadow-sm">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium text-neutral-500">You&apos;re committed to</p>
+              <p className="mt-0.5 text-3xl font-extrabold tracking-tight text-brand-purple-dark">
+                ${(totalLeadingCents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+            </div>
+            <p className="pb-1 text-right text-sm text-neutral-500">
+              Leading {leadingItems.length} of {items.length} item{items.length === 1 ? "" : "s"}
+            </p>
+          </div>
+
+          {leadingItems.length >= 2 && (
+            <div className="mt-4 space-y-2.5">
+              {leadingItems.map((it) => {
+                const pct = Math.max(6, Math.round((it.currentAmountCents / maxLeadingCents) * 100));
+                return (
+                  <div key={it.id} className="flex items-center gap-3">
+                    <span className="w-20 shrink-0 truncate text-xs text-neutral-600">{it.title}</span>
+                    <div className="h-4 flex-1 overflow-hidden rounded bg-brand-lavender-tint">
+                      <div
+                        className="h-full bg-brand-purple transition-all duration-500"
+                        style={{ width: `${pct}%`, borderRadius: "0 4px 4px 0" }}
+                      />
+                    </div>
+                    <span className="w-14 shrink-0 text-right text-xs font-semibold text-brand-purple-dark">
+                      ${(it.currentAmountCents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {items.map((item) => {
         const increment = item.bidIncrementCents ?? 100;
         const nextBid = item.currentAmountCents + increment;
