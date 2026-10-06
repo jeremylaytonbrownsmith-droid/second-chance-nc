@@ -35,11 +35,12 @@ export default async function AdminHomePage() {
   return (
     <div className="space-y-12">
       <section>
-        <h1 className="text-2xl font-semibold">Quick actions</h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-purple">Second Chance</p>
+        <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-brand-purple-dark">Quick actions</h1>
+        <p className="mt-1.5 text-sm text-neutral-500">
           Everything below points at the live demo event — {demoEvent.name}.
         </p>
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <HubCard
             href="/story"
             icon={<PlayCircleIcon />}
@@ -116,7 +117,7 @@ export default async function AdminHomePage() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold">Organizations</h2>
+        <h2 className="text-xl font-bold text-brand-purple-dark">Organizations</h2>
         <div className={`mt-4 ${table.wrapper}`}>
           <table className={`min-w-[480px] ${table.table}`}>
             <thead>
@@ -183,7 +184,7 @@ export default async function AdminHomePage() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold">Events</h2>
+        <h2 className="text-xl font-bold text-brand-purple-dark">Events</h2>
         <div className={`mt-4 ${table.wrapper}`}>
           <table className={`min-w-[560px] ${table.table}`}>
             <thead>

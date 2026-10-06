@@ -5,8 +5,8 @@ import { ResetDemoButton } from "./ResetDemoButton";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-brand-lavender-tint text-neutral-900">
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:px-6">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-brand-lavender-tint to-white text-neutral-900">
+      <header className="sticky top-0 z-10 border-b border-brand-lavender/40 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-md sm:px-6">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
           <a href="/admin" className="inline-flex items-center gap-3">
             <Image
@@ -17,7 +17,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               priority
               className="h-9 w-auto sm:h-10"
             />
-            <span className="hidden text-sm font-medium text-brand-purple-dark sm:inline">
+            <span className="hidden border-l border-neutral-200 pl-3 text-sm font-medium text-brand-purple-dark sm:inline">
               Auction &amp; Giving
             </span>
           </a>

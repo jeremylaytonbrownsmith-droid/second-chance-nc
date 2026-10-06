@@ -25,19 +25,19 @@ export const button = {
     "whitespace-nowrap text-xs font-medium text-brand-purple transition-colors hover:text-brand-purple-dark hover:underline disabled:cursor-not-allowed disabled:opacity-50",
 } as const;
 
-export const card = "rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5";
+export const card = "rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5";
 
 export const table = {
-  wrapper: "overflow-x-auto rounded-xl border border-neutral-200 bg-white shadow-sm",
+  wrapper: "overflow-x-auto rounded-2xl border border-neutral-200 bg-white shadow-sm",
   table: "w-full border-collapse text-sm",
-  headRow: "border-b border-neutral-200 bg-neutral-50 text-left",
-  th: "px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-500",
+  headRow: "border-b border-neutral-200 bg-brand-lavender-tint/40 text-left",
+  th: "px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-brand-purple-dark/70",
   row: "border-b border-neutral-100 align-top transition-colors last:border-b-0 hover:bg-brand-lavender-tint/50",
   td: "px-4 py-2.5",
   empty: "px-4 py-6 text-center text-neutral-500",
 } as const;
 
 export const input =
-  "rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-sm shadow-sm transition-colors focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple";
+  "rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-sm shadow-sm transition-colors focus:border-brand-purple focus:outline-none focus:ring-2 focus:ring-brand-purple/20";
 
 export const label = "text-xs font-medium text-neutral-500";

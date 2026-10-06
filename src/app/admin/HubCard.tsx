@@ -15,15 +15,15 @@ export function HubCard({
   return (
     <Link
       href={href}
-      className="group flex flex-col rounded-xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-brand-purple hover:shadow-md active:translate-y-0"
+      className="group flex flex-col rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-brand-purple/60 hover:shadow-lg hover:shadow-brand-purple/10 active:translate-y-0"
     >
-      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-brand-lavender-tint text-brand-purple transition-colors group-hover:bg-brand-purple group-hover:text-white">
+      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-brand-lavender-tint to-brand-lavender/60 text-brand-purple transition-colors group-hover:from-brand-purple group-hover:to-brand-purple-dark group-hover:text-white">
         {icon}
       </span>
-      <span className="mt-3 text-base font-semibold text-neutral-900 group-hover:text-brand-purple">
+      <span className="mt-3 text-base font-semibold text-neutral-900 group-hover:text-brand-purple-dark">
         {title}
       </span>
-      <span className="mt-1 text-sm text-neutral-500">{description}</span>
+      <span className="mt-1 text-sm leading-relaxed text-neutral-500">{description}</span>
     </Link>
   );
 }
