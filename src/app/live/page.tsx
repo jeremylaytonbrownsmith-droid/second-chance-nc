@@ -37,6 +37,7 @@ export default async function LiveEventPage() {
               width={160}
               height={56}
               priority
+              unoptimized
               className="h-7 w-auto sm:h-8"
             />
             <span className="text-sm font-medium text-neutral-500">Live</span>

@@ -43,6 +43,7 @@ export default async function BidderPage({
             width={160}
             height={56}
             priority
+            unoptimized
             className="h-8 w-auto"
           />
           <span className="text-xs font-medium text-neutral-500">{registration.event.name}</span>

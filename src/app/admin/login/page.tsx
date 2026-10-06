@@ -18,6 +18,7 @@ export default async function AdminLoginPage({
             width={200}
             height={72}
             priority
+            unoptimized
             className="h-14 w-auto"
           />
         </div>

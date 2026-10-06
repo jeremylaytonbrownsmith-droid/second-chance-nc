@@ -28,6 +28,7 @@ export function AdminChrome({ children }: { children: ReactNode }) {
               width={180}
               height={64}
               priority
+              unoptimized
               className="h-9 w-auto sm:h-10"
             />
             <span className="hidden border-l border-neutral-200 pl-3 text-sm font-medium text-brand-purple-dark sm:inline">
