@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 interface ItemViewModel {
@@ -47,6 +48,7 @@ const STATUS_LABELS: Record<string, string> = {
 export function LiveEventBoard({ items: initialItems }: { items: ItemViewModel[] }) {
   const [items, setItems] = useState(initialItems);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [justUpdated, setJustUpdated] = useState<Record<string, boolean>>({});
   const itemsRef = useRef(initialItems);
   useEffect(() => {
     itemsRef.current = items;
@@ -67,6 +69,9 @@ export function LiveEventBoard({ items: initialItems }: { items: ItemViewModel[]
         ),
       );
       if (isNewBid) {
+        setJustUpdated((prev) => ({ ...prev, [itemId]: true }));
+        setTimeout(() => setJustUpdated((prev) => ({ ...prev, [itemId]: false })), 1500);
+
         const item = itemsRef.current.find((it) => it.id === itemId);
         setActivity((prev) =>
           [
@@ -100,40 +105,62 @@ export function LiveEventBoard({ items: initialItems }: { items: ItemViewModel[]
   }, []);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-2">
+    <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((item) => (
           <div
             key={item.id}
-            className="overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-lg transition-transform duration-150 hover:-translate-y-0.5"
+            className={`group overflow-hidden rounded-2xl border bg-white/[0.04] shadow-xl shadow-black/40 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-lavender/40 hover:bg-white/[0.07] ${
+              justUpdated[item.id] ? "border-brand-lavender ring-2 ring-brand-lavender/60" : "border-white/10"
+            }`}
           >
-            {item.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.image} alt="" className="h-36 w-full object-cover" />
-            ) : (
-              <div className="flex h-36 w-full items-center justify-center bg-gradient-to-br from-brand-purple/40 to-brand-purple-dark/40 text-xs uppercase tracking-wide text-white/40">
+            <div className="relative h-44 w-full overflow-hidden bg-neutral-900">
+              {item.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.image}
+                  alt=""
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-purple/50 via-brand-purple-dark/60 to-neutral-950">
+                  <Image
+                    src="/brand/paw-icon.png"
+                    alt=""
+                    width={96}
+                    height={96}
+                    className="absolute -bottom-4 -right-4 h-28 w-28 opacity-[0.12]"
+                  />
+                  <span className="relative text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+                    {item.category ?? item.itemType}
+                  </span>
+                </div>
+              )}
+              <div className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+                {item.itemNumber}
+              </div>
+            </div>
+            <div className="p-5">
+              <div className="text-xs font-semibold uppercase tracking-wide text-white/40">
                 {item.category ?? item.itemType}
               </div>
-            )}
-            <div className="p-4">
-              <div className="text-xs font-semibold uppercase tracking-wide text-white/40">
-                {item.itemNumber} {item.category ? `· ${item.category}` : ""}
-              </div>
-              <div className="mt-0.5 text-lg font-semibold leading-tight">{item.title}</div>
-              <div className="mt-3 flex items-end justify-between">
+              <div className="mt-0.5 line-clamp-2 text-lg font-bold leading-tight text-white">{item.title}</div>
+              <div className="mt-4 flex items-end justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-brand-lavender">
+                  <div
+                    className={`text-4xl font-extrabold tracking-tight transition-colors duration-300 ${
+                      justUpdated[item.id] ? "text-white" : "text-brand-lavender"
+                    }`}
+                  >
                     {money(item.currentAmountCents)}
                   </div>
-                  <div className="mt-0.5 text-xs text-white/50">
+                  <div className="mt-1 text-xs text-white/50">
                     {item.bidCount} bid{item.bidCount === 1 ? "" : "s"}
-                    {item.leadingBidderNumber !== null && (
-                      <> · leading: #{item.leadingBidderNumber}</>
-                    )}
+                    {item.leadingBidderNumber !== null && <> · leading: #{item.leadingBidderNumber}</>}
                   </div>
                 </div>
                 <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
                     item.status === "OPEN"
                       ? "bg-green-500/20 text-green-300"
                       : item.status === "AWARDED"
@@ -152,26 +179,22 @@ export function LiveEventBoard({ items: initialItems }: { items: ItemViewModel[]
         )}
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-white/5 p-5 shadow-lg lg:sticky lg:top-6 lg:self-start">
-        <h2 className="font-semibold">Live activity</h2>
-        <p className="mt-1 text-xs text-white/50">
-          Updates the instant a bid lands, from anyone&rsquo;s phone.
-        </p>
-        <div className="mt-3 space-y-2.5">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-xl shadow-black/40 backdrop-blur-sm xl:sticky xl:top-6 xl:self-start">
+        <h2 className="font-semibold text-white">Live activity</h2>
+        <p className="mt-1 text-xs text-white/50">Updates the instant a bid lands, from anyone&rsquo;s phone.</p>
+        <div className="mt-4 space-y-3">
           {activity.map((entry) => (
-            <div key={entry.id} className="border-b border-white/10 pb-2.5 text-sm">
-              <span className="font-medium text-brand-lavender">
-                #{entry.bidderNumber ?? "?"}
-              </span>{" "}
-              bid {money(entry.amountCents)} on {entry.itemTitle}
-              <div className="text-xs text-white/30">
+            <div key={entry.id} className="border-b border-white/10 pb-3 text-sm last:border-0">
+              <span className="font-semibold text-brand-lavender">#{entry.bidderNumber ?? "?"}</span>{" "}
+              <span className="text-white/90">
+                bid {money(entry.amountCents)} on {entry.itemTitle}
+              </span>
+              <div className="mt-0.5 text-xs text-white/30">
                 {new Date(entry.serverTimestamp).toLocaleTimeString()}
               </div>
             </div>
           ))}
-          {activity.length === 0 && (
-            <p className="text-sm text-white/50">No bids yet — this updates live.</p>
-          )}
+          {activity.length === 0 && <p className="text-sm text-white/50">No bids yet — this updates live.</p>}
         </div>
       </div>
     </div>
