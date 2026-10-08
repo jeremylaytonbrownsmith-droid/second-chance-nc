@@ -295,15 +295,15 @@ export function StoryPlayer({
   const liveBoardUrl = `/admin/events/${eventId}/live`;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-neutral-950 text-white">
+    <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-brand-lavender-tint to-white text-neutral-900">
       <div className="flex items-center gap-1 px-4 pt-4 sm:px-8">
         {PHASES.map((p, i) => (
           <div
             key={p.key}
-            className="h-1 flex-1 overflow-hidden rounded-full bg-white/15"
+            className="h-1 flex-1 overflow-hidden rounded-full bg-brand-lavender/30"
           >
             <div
-              className={`h-full bg-brand-lavender transition-all ${
+              className={`h-full bg-brand-purple transition-all ${
                 i <= phaseIndex ? "w-full" : "w-0"
               }`}
             />
@@ -312,10 +312,10 @@ export function StoryPlayer({
       </div>
 
       <div className="flex items-center justify-between px-4 pt-2 sm:px-8">
-        <span className="text-xs uppercase tracking-wide text-white/50">
+        <span className="text-xs uppercase tracking-wide text-neutral-500">
           {eventName} — Story Mode
         </span>
-        <Link href="/admin" className="text-xs text-white/50 hover:text-white">
+        <Link href="/admin" className="text-xs text-neutral-500 hover:text-brand-purple-dark">
           Exit
         </Link>
       </div>
@@ -323,11 +323,11 @@ export function StoryPlayer({
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-8">
         <div className="mx-auto w-full max-w-4xl">
           {phase.time && (
-            <div className="text-sm font-medium text-brand-lavender">{phase.time}</div>
+            <div className="text-sm font-medium text-brand-purple">{phase.time}</div>
           )}
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{phase.title}</h1>
+          <h1 className="mt-1 text-2xl font-bold text-brand-purple-dark sm:text-3xl">{phase.title}</h1>
           {phase.caption && (
-            <p className="mt-2 max-w-2xl text-sm text-white/70 sm:text-base">
+            <p className="mt-2 max-w-2xl text-sm text-neutral-600 sm:text-base">
               {phase.caption}
             </p>
           )}
@@ -337,7 +337,7 @@ export function StoryPlayer({
               <iframe
                 title="Item catalog"
                 src={`/admin/events/${eventId}`}
-                className="h-[60vh] w-full rounded-lg border border-white/10 bg-white"
+                className="h-[60vh] w-full rounded-lg border border-brand-lavender/40 bg-white"
               />
             )}
 
@@ -346,7 +346,7 @@ export function StoryPlayer({
                 key="live-board"
                 title="Live auction board"
                 src={liveBoardUrl}
-                className="h-[60vh] w-full rounded-lg border border-white/10 bg-white"
+                className="h-[60vh] w-full rounded-lg border border-brand-lavender/40 bg-white"
               />
             )}
 
@@ -358,7 +358,7 @@ export function StoryPlayer({
                   key="hammer-board"
                   title="Live auction board"
                   src={liveBoardUrl}
-                  className="h-[60vh] w-full rounded-lg border border-white/10 bg-white"
+                  className="h-[60vh] w-full rounded-lg border border-brand-lavender/40 bg-white"
                 />
               ))}
 
@@ -369,7 +369,7 @@ export function StoryPlayer({
                 <iframe
                   title="Receipt"
                   src={`/admin/receipts/${transactionId}`}
-                  className="h-[60vh] w-full rounded-lg border border-white/10 bg-white"
+                  className="h-[60vh] w-full rounded-lg border border-brand-lavender/40 bg-white"
                 />
               ))}
 
@@ -381,9 +381,9 @@ export function StoryPlayer({
                   <iframe
                     title="Acknowledgment PDF"
                     src={`/api/admin/receipts/${transactionId}/pdf`}
-                    className="h-[54vh] w-full rounded-lg border border-white/10 bg-white"
+                    className="h-[54vh] w-full rounded-lg border border-brand-lavender/40 bg-white"
                   />
-                  <div className="flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+                  <div className="flex flex-wrap items-center gap-3 rounded-lg border border-brand-lavender/40 bg-brand-lavender-tint/60 px-4 py-3 text-sm text-neutral-600">
                     <a
                       href={`/api/admin/receipts/${transactionId}/pdf`}
                       target="_blank"
@@ -404,7 +404,7 @@ export function StoryPlayer({
               (importPending || !importSummary ? (
                 <StoryLoadingCard label="Importing prior year's spreadsheet…" />
               ) : (
-                <div className="rounded-lg border border-white/10 bg-white p-6 text-neutral-900">
+                <div className="rounded-lg border border-brand-lavender/40 bg-white p-6 text-neutral-900">
                   <h2 className="font-semibold">Import complete</h2>
                   <ul className="mt-3 space-y-1 text-sm">
                     <li>{importSummary.totalRows} rows found</li>
@@ -429,19 +429,37 @@ export function StoryPlayer({
               <iframe
                 title="Sync log"
                 src="/admin/sync-log"
-                className="h-[60vh] w-full rounded-lg border border-white/10 bg-white"
+                className="h-[60vh] w-full rounded-lg border border-brand-lavender/40 bg-white"
               />
             )}
 
             {phase.key === "wrapup" && (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-6">
-                <ul className="space-y-2 text-sm text-white/80">
-                  <li>✓ Live bidding, updating on every device in real time</li>
-                  <li>✓ A live-auction clerk screen fast enough for a ten-minute volunteer</li>
-                  <li>✓ One checkout per bidder, with the tax math computed automatically</li>
-                  <li>✓ A real PDF acknowledgment letter, generated on the spot</li>
-                  <li>✓ A prior year&rsquo;s spreadsheet reconciled in seconds, not days</li>
-                  <li>✓ Every gift queued to sync to the donor CRM</li>
+              <div className="rounded-lg border border-brand-lavender/40 bg-white p-6 shadow-sm">
+                <ul className="space-y-2 text-sm text-neutral-700">
+                  <li>
+                    <span className="font-semibold text-green-600">✓</span> Live bidding, updating
+                    on every device in real time
+                  </li>
+                  <li>
+                    <span className="font-semibold text-green-600">✓</span> A live-auction clerk
+                    screen fast enough for a ten-minute volunteer
+                  </li>
+                  <li>
+                    <span className="font-semibold text-green-600">✓</span> One checkout per
+                    bidder, with the tax math computed automatically
+                  </li>
+                  <li>
+                    <span className="font-semibold text-green-600">✓</span> A real PDF
+                    acknowledgment letter, generated on the spot
+                  </li>
+                  <li>
+                    <span className="font-semibold text-green-600">✓</span> A prior year&rsquo;s
+                    spreadsheet reconciled in seconds, not days
+                  </li>
+                  <li>
+                    <span className="font-semibold text-green-600">✓</span> Every gift queued to
+                    sync to the donor CRM
+                  </li>
                 </ul>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link
@@ -452,7 +470,7 @@ export function StoryPlayer({
                   </Link>
                   <button
                     onClick={() => window.location.reload()}
-                    className="rounded border border-white/30 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                    className="rounded border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-100"
                   >
                     Watch it again
                   </button>
@@ -463,11 +481,11 @@ export function StoryPlayer({
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-3 border-t border-white/10 px-4 py-4">
+      <div className="flex items-center justify-center gap-3 border-t border-brand-lavender/40 bg-white/70 px-4 py-4 backdrop-blur-sm">
         <button
           onClick={() => goTo(phaseIndex - 1)}
           disabled={phaseIndex === 0}
-          className="rounded border border-white/20 px-3 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/10 disabled:opacity-30"
+          className="rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-100 disabled:opacity-30"
         >
           ← Back
         </button>
@@ -480,7 +498,7 @@ export function StoryPlayer({
         <button
           onClick={() => goTo(phaseIndex + 1)}
           disabled={phaseIndex === PHASES.length - 1}
-          className="rounded border border-white/20 px-3 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/10 disabled:opacity-30"
+          className="rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-100 disabled:opacity-30"
         >
           Next →
         </button>
@@ -491,9 +509,9 @@ export function StoryPlayer({
 
 function StoryLoadingCard({ label }: { label: string }) {
   return (
-    <div className="flex h-[60vh] w-full items-center justify-center rounded-lg border border-white/10 bg-white/5">
-      <div className="flex items-center gap-3 text-white/70">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+    <div className="flex h-[60vh] w-full items-center justify-center rounded-lg border border-brand-lavender/40 bg-white">
+      <div className="flex items-center gap-3 text-neutral-600">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-lavender/50 border-t-brand-purple" />
         {label}
       </div>
     </div>
