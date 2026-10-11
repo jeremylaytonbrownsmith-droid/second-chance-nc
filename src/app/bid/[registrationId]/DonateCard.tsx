@@ -9,6 +9,7 @@ export function DonateCard({ registrationId }: { registrationId: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [givenCents, setGivenCents] = useState<number | null>(null);
+  const [lastTransactionId, setLastTransactionId] = useState<string | null>(null);
 
   async function donate(amountCents: number) {
     setPending(true);
@@ -25,6 +26,7 @@ export function DonateCard({ registrationId }: { registrationId: string }) {
         return;
       }
       setGivenCents((prev) => (prev ?? 0) + amountCents);
+      setLastTransactionId(data.transactionId);
       setCustomAmount("");
     } catch {
       setError("Network error — venue wifi may be down. Try again.");
@@ -48,9 +50,19 @@ export function DonateCard({ registrationId }: { registrationId: string }) {
       <h2 className="mt-0.5 text-lg font-bold text-brand-purple-dark">Donate tonight</h2>
 
       {givenCents !== null && (
-        <p className="mt-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
-          Thank you — you&apos;ve given ${(givenCents / 100).toFixed(2)} tonight.
-        </p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-semibold text-green-700">
+          <span>Thank you — you&apos;ve given ${(givenCents / 100).toFixed(2)} tonight.</span>
+          {lastTransactionId && (
+            <a
+              href={`/receipts/${lastTransactionId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 underline decoration-green-700/40 underline-offset-2 hover:decoration-green-700"
+            >
+              View receipt →
+            </a>
+          )}
+        </div>
       )}
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
