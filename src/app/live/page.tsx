@@ -3,8 +3,13 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getItemBidState } from "@/lib/auction/bidding";
+import { getTotalRaisedCents } from "@/lib/checkout/checkout";
 import { getOrCreateDemoEvent } from "@/lib/demo/seed";
 import { LiveEventBoard } from "./LiveEventBoard";
+
+function money(cents: number): string {
+  return `$${(cents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
 
 /**
  * The screen for the room, not for staff — one link, no picking a bidder
@@ -25,6 +30,8 @@ export default async function LiveEventPage() {
   const itemsWithState = await Promise.all(
     items.map(async (item) => ({ item, state: await getItemBidState(item.id) })),
   );
+
+  const totalRaisedCents = event.goalCents ? await getTotalRaisedCents(event.id) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-lavender-tint to-white">
@@ -57,6 +64,33 @@ export default async function LiveEventPage() {
             DEMO MODE — no real bids, no real money
           </div>
         )}
+
+        {event.goalCents !== null && totalRaisedCents !== null && (
+          <div className="mb-8 rounded-2xl border border-brand-lavender/50 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-purple">
+                  Raised tonight
+                </p>
+                <p className="mt-0.5 text-4xl font-extrabold tracking-tight text-brand-purple-dark sm:text-5xl">
+                  {money(totalRaisedCents)}
+                </p>
+              </div>
+              <p className="pb-1 text-sm text-neutral-500">
+                Goal: {money(event.goalCents)}
+              </p>
+            </div>
+            <div className="mt-4 h-5 overflow-hidden rounded-full bg-brand-lavender-tint">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-brand-purple to-brand-purple-dark transition-all duration-700"
+                style={{
+                  width: `${Math.min(100, Math.max(totalRaisedCents > 0 ? 3 : 0, (totalRaisedCents / event.goalCents) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="mb-8 flex items-center gap-3">
           <span className="relative flex h-3 w-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />

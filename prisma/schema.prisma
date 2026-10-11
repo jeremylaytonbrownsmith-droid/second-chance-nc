@@ -156,6 +156,10 @@ model Event {
   silentCloseAt DateTime?
   settingsJson  Json?
 
+  // Nightly fundraising goal, shown as a progress thermometer on /live.
+  // Null hides the thermometer entirely.
+  goalCents Int?
+
   // Denormalized from Organization.isDemo at creation time so demo-mode
   // checks (banner, reset control, restricted email sending) don't need
   // an extra join on every page render.

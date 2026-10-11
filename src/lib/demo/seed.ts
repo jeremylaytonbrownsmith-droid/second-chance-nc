@@ -50,6 +50,7 @@ export async function resetDemoData() {
         eventDate,
         taxYear: eventDate.getUTCFullYear(),
         status: EventStatus.OPEN,
+        goalCents: 5_000_000,
       },
     });
   } else {
@@ -61,6 +62,7 @@ export async function resetDemoData() {
         taxYear: eventDate.getUTCFullYear(),
         status: EventStatus.OPEN,
         isDemo: true,
+        goalCents: 5_000_000,
       },
     });
   }

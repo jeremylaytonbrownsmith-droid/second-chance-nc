@@ -201,3 +201,17 @@ export async function getTransactionForReceipt(transactionId: string) {
     totalDeductibleCents,
   };
 }
+
+/**
+ * Total raised so far tonight — the sum of every paid transaction for the
+ * event. Drives the /live fundraising thermometer. Deliberately the gross
+ * amount paid, not the deductible portion: "money raised" is what donors
+ * handed over, same framing a thermometer on a gala's big screen uses.
+ */
+export async function getTotalRaisedCents(eventId: string): Promise<number> {
+  const result = await prisma.transaction.aggregate({
+    where: { eventId, voidedAt: null, status: "PAID" },
+    _sum: { totalCents: true },
+  });
+  return result._sum.totalCents ?? 0;
+}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getItemBidState } from "@/lib/auction/bidding";
 import { BidBoard } from "./BidBoard";
+import { DonateCard } from "./DonateCard";
 
 export default async function BidderPage({
   params,
@@ -63,6 +64,8 @@ export default async function BidderPage({
           </p>
           <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight text-brand-purple-dark">{bidderName}</h1>
         </div>
+
+        <DonateCard registrationId={registration.id} />
 
         <BidBoard
           registrationId={registration.id}
