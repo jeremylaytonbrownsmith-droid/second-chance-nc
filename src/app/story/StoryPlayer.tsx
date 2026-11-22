@@ -321,7 +321,10 @@ export function StoryPlayer({
       </div>
 
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6 sm:px-8">
-        <div className="mx-auto w-full max-w-4xl">
+        {/* max-w-6xl matches AdminChrome's own content width — anything
+            narrower clips the embedded admin pages' wider tables (e.g. the
+            item catalog) and forces horizontal scrolling inside the iframe. */}
+        <div className="mx-auto w-full max-w-6xl">
           {phase.time && (
             <div className="text-sm font-medium text-brand-purple">{phase.time}</div>
           )}
