@@ -4,6 +4,7 @@ import { auditedMutation } from "@/lib/audit";
 import type { Award, Bid, BidSource } from "@prisma/client";
 import { assertCents } from "@/lib/money/deductible";
 import { publishBidUpdate } from "@/lib/realtime/notify";
+import { notifyOutbid } from "@/lib/sms/outbid-notification";
 
 /**
  * Bid acceptance — Section 13. Accept the bid inside a transaction with a
@@ -227,9 +228,27 @@ export async function placeBid(input: PlaceBidInput): Promise<PlaceBidResult> {
 
       const bidCount = await tx.bid.count({ where: { itemId: input.itemId, voidedAt: null } });
 
-      return { bid, currentAmountCents: stateAfter.currentAmountCents, leaderRegistrationId: stateAfter.leaderRegistrationId, bidCount };
+      return {
+        bid,
+        currentAmountCents: stateAfter.currentAmountCents,
+        leaderRegistrationId: stateAfter.leaderRegistrationId,
+        previousLeaderRegistrationId: stateBefore.leaderRegistrationId,
+        bidCount,
+      };
     })
     .then(async (result) => {
+      // Best-effort, after the transaction above has committed: the
+      // previous leader (if any, and if different from the new one) just
+      // got outbid. No-ops instantly if ENABLE_OUTBID_SMS is off.
+      if (
+        result.previousLeaderRegistrationId &&
+        result.previousLeaderRegistrationId !== result.leaderRegistrationId
+      ) {
+        notifyOutbid(input.itemId, result.previousLeaderRegistrationId, result.currentAmountCents).catch(
+          (err) => console.error("notifyOutbid failed for item", input.itemId, err),
+        );
+      }
+
       // Publish only after the transaction above has committed.
       const leaderRegistration = result.leaderRegistrationId
         ? await prisma.registration.findUnique({
