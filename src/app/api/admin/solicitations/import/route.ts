@@ -5,12 +5,14 @@ import {
   SolicitationImportError,
 } from "@/lib/import/solicitation-spreadsheet";
 import { toErrorResponse } from "@/lib/http/handle-error";
+import { requireAdminRole } from "@/lib/admin/session";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdminRole(); // bulk solicitation import is admin-only
     const formData = await request.formData();
     const file = formData.get("file");
     const eventId = formData.get("eventId");

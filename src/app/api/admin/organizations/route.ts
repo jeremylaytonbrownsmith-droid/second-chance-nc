@@ -6,6 +6,7 @@ import {
 } from "@/lib/admin/organizations";
 import { toCsv } from "@/lib/csv/to-csv";
 import { toErrorResponse } from "@/lib/http/handle-error";
+import { requireAdminRole } from "@/lib/admin/session";
 
 export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get("format");
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdminRole(); // event settings are admin-only
     const body = await request.json();
     const organization = await createOrganization(body);
     return NextResponse.json({ organization }, { status: 201 });

@@ -8,6 +8,7 @@ import {
 } from "@/lib/admin/solicitations";
 import { toCsv } from "@/lib/csv/to-csv";
 import { toErrorResponse } from "@/lib/http/handle-error";
+import { requireAdminRole } from "@/lib/admin/session";
 
 export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get("format");
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdminRole(); // donor/solicitation records are admin-only
     const body = await request.json();
     const solicitation = await createSolicitation(body);
     return NextResponse.json({ solicitation }, { status: 201 });

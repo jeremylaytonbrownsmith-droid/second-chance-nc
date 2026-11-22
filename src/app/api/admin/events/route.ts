@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createEvent, eventCsvColumns, listEvents } from "@/lib/admin/events";
 import { toCsv } from "@/lib/csv/to-csv";
 import { toErrorResponse } from "@/lib/http/handle-error";
+import { requireAdminRole } from "@/lib/admin/session";
 
 export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get("format");
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdminRole(); // event settings are admin-only
     const body = await request.json();
     const event = await createEvent(body);
     return NextResponse.json({ event }, { status: 201 });

@@ -6,6 +6,7 @@ import {
 } from "@/lib/admin/auction-items";
 import { toCsv } from "@/lib/csv/to-csv";
 import { toErrorResponse } from "@/lib/http/handle-error";
+import { requireAdminRole } from "@/lib/admin/session";
 
 export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get("format");
@@ -34,6 +35,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdminRole(); // event settings/catalog are admin-only
     const body = await request.json();
     const auctionItem = await createAuctionItem(body);
     return NextResponse.json({ auctionItem }, { status: 201 });

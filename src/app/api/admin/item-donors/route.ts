@@ -6,6 +6,7 @@ import {
 } from "@/lib/admin/item-donors";
 import { toCsv } from "@/lib/csv/to-csv";
 import { toErrorResponse } from "@/lib/http/handle-error";
+import { requireAdminRole } from "@/lib/admin/session";
 
 export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get("format");
@@ -34,13 +35,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { actorId, ...body } = await request.json();
-    if (!actorId || typeof actorId !== "string") {
-      return NextResponse.json(
-        { error: "validation_error", message: "actorId is required" },
-        { status: 400 },
-      );
-    }
+    const actorId = await requireAdminRole(); // donors are admin-only
+    const body = await request.json();
     const itemDonor = await createItemDonor(body, actorId);
     return NextResponse.json({ itemDonor }, { status: 201 });
   } catch (error) {
