@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { listConstituents } from "@/lib/admin/constituents";
 import { listItemDonors } from "@/lib/admin/item-donors";
 import { listAuctionItemCategories, listAuctionItems } from "@/lib/admin/auction-items";
+import { listAuditLogsForEvent } from "@/lib/admin/audit-log";
 import {
   closeAuctionItemAction,
   createAuctionItemAction,
@@ -35,11 +36,12 @@ export default async function EventDetailPage({
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) notFound();
 
-  const [constituents, itemDonors, auctionItems, itemCategories] = await Promise.all([
+  const [constituents, itemDonors, auctionItems, itemCategories, auditLogs] = await Promise.all([
     listConstituents(event.orgId),
     listItemDonors(eventId),
     listAuctionItems(eventId, { category, search: q }),
     listAuctionItemCategories(eventId),
+    isAdmin ? listAuditLogsForEvent(eventId) : Promise.resolve([]),
   ]);
 
   const constituentName = (id: string) => {
@@ -399,6 +401,58 @@ export default async function EventDetailPage({
           </form>
         )}
       </section>
+
+      {isAdmin && (
+        <section>
+          <h2 className="text-xl font-semibold">Activity log</h2>
+          <p className="mt-1 text-sm text-neutral-500">
+            Every change to this event&apos;s items, donors, transactions, and awards — who, what,
+            and when. Most recent first.
+          </p>
+          <div className={`mt-4 ${table.wrapper}`}>
+            <table className={`min-w-[720px] ${table.table}`}>
+              <thead>
+                <tr className={table.headRow}>
+                  <th className={table.th}>When</th>
+                  <th className={table.th}>Actor</th>
+                  <th className={table.th}>Action</th>
+                  <th className={table.th}>Entity</th>
+                  <th className={table.th}>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditLogs.map((log) => (
+                  <tr key={log.id} className={table.row}>
+                    <td className={`${table.td} whitespace-nowrap`}>{log.createdAt.toISOString()}</td>
+                    <td className={`${table.td} capitalize`}>{log.actorId}</td>
+                    <td className={table.td}>{log.action}</td>
+                    <td className={`${table.td} font-mono text-xs`}>
+                      {log.entityType} {log.entityId.slice(0, 10)}…
+                    </td>
+                    <td className={table.td}>
+                      {(log.beforeJson !== null || log.afterJson !== null) && (
+                        <details>
+                          <summary className="cursor-pointer text-xs text-brand-purple">View</summary>
+                          <pre className="mt-1 max-w-sm overflow-x-auto rounded bg-neutral-50 p-2 text-[11px]">
+                            {JSON.stringify({ before: log.beforeJson, after: log.afterJson }, null, 2)}
+                          </pre>
+                        </details>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {auditLogs.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className={table.empty}>
+                      No activity recorded yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
