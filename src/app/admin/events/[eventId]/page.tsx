@@ -14,6 +14,8 @@ import {
 } from "../../actions";
 import { button, card, input, label as labelClass, table } from "../../ui";
 
+export const dynamic = "force-dynamic";
+
 function formatCents(cents: number | null): string {
   if (cents === null) return "—";
   return `$${(cents / 100).toFixed(2)}`;

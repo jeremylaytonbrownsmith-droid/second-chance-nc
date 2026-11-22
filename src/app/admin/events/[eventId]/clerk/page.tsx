@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ClerkForm } from "./ClerkForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function ClerkPage({
   params,
 }: {

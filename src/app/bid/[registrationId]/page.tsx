@@ -5,6 +5,8 @@ import { getItemBidState } from "@/lib/auction/bidding";
 import { BidBoard } from "./BidBoard";
 import { DonateCard } from "./DonateCard";
 
+export const dynamic = "force-dynamic";
+
 export default async function BidderPage({
   params,
 }: {

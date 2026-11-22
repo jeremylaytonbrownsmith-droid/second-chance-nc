@@ -7,6 +7,8 @@ import { getTotalRaisedCents } from "@/lib/checkout/checkout";
 import { getOrCreateDemoEvent } from "@/lib/demo/seed";
 import { LiveEventBoard } from "./LiveEventBoard";
 
+export const dynamic = "force-dynamic";
+
 function money(cents: number): string {
   return `$${(cents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }

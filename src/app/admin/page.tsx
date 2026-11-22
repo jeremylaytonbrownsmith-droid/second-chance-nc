@@ -19,6 +19,8 @@ import {
   UploadIcon,
 } from "./icons";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminHomePage() {
   const [organizations, events, demoEvent] = await Promise.all([
     listOrganizations(),

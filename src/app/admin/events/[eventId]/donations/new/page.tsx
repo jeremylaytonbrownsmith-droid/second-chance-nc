@@ -4,6 +4,8 @@ import { listAuctionItemCategories, listAuctionItems } from "@/lib/admin/auction
 import { listSolicitationCategories } from "@/lib/admin/solicitations";
 import { DonationIntakeForm } from "./DonationIntakeForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewDonationPage({
   params,
   searchParams,

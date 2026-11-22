@@ -14,6 +14,7 @@ import {
 } from "@/lib/admin/auction-items";
 import { syncTransactionToEtapestry } from "@/lib/etapestry/demo-sync";
 import { resetDemoData } from "@/lib/demo/seed";
+import { isDemoModeEnabled } from "@/lib/demo/mode";
 import { createSolicitation, setSolicitationStatus } from "@/lib/admin/solicitations";
 import type { SolicitationStatus } from "@prisma/client";
 
@@ -153,6 +154,12 @@ export async function setSolicitationStatusAction(formData: FormData) {
 }
 
 export async function resetDemoDataAction() {
+  // Server-side gate, not just a hidden button — DEMO_MODE off means this
+  // destructive reset refuses to run even if someone calls the action
+  // directly. See src/lib/demo/mode.ts.
+  if (!isDemoModeEnabled()) {
+    throw new Error("Demo reset is disabled — DEMO_MODE is not set.");
+  }
   const { event } = await resetDemoData();
   revalidatePath("/admin");
   revalidatePath(`/admin/events/${event.id}`);

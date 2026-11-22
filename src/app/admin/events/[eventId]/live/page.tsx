@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getItemBidState } from "@/lib/auction/bidding";
 import { LiveBoard } from "./LiveBoard";
 
+export const dynamic = "force-dynamic";
+
 export default async function LiveAuctionBoardPage({
   params,
 }: {

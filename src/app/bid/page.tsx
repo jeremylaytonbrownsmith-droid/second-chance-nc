@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getOrCreateDemoEvent } from "@/lib/demo/seed";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function BidderPickerPage() {
   const event = await getOrCreateDemoEvent();
   const registrations = await prisma.registration.findMany({

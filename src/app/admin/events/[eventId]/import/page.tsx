@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ImportUploader } from "./ImportUploader";
 
+export const dynamic = "force-dynamic";
+
 export default async function ImportPage({
   params,
 }: {

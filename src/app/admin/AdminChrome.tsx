@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { ResetDemoButton } from "./ResetDemoButton";
 import { logoutAction } from "./login/actions";
 
-export function AdminChrome({ children }: { children: ReactNode }) {
+export function AdminChrome({ children, demoMode }: { children: ReactNode; demoMode: boolean }) {
   const pathname = usePathname();
 
   // The login page is its own full-screen, unbranded-nav experience — a
@@ -72,9 +72,11 @@ export function AdminChrome({ children }: { children: ReactNode }) {
             >
               Live board
             </Link>
-            <span className="ml-1">
-              <ResetDemoButton />
-            </span>
+            {demoMode && (
+              <span className="ml-1">
+                <ResetDemoButton />
+              </span>
+            )}
             <form action={logoutAction}>
               <button
                 type="submit"
