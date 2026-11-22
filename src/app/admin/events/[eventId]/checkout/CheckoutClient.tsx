@@ -47,20 +47,8 @@ export function CheckoutClient({
   const [newLineType, setNewLineType] = useState<AdhocLine["lineType"]>("CASH_GIFT");
   const [newLineAmount, setNewLineAmount] = useState("");
   const [method, setMethod] = useState<"CARD" | "CASH" | "CHECK">("CARD");
-  const [actorId, setActorId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    // One-time hydration of a persisted preference from localStorage,
-    // which isn't available during server rendering.
-    const stored = window.localStorage.getItem("checkoutStaffName");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (stored) setActorId(stored);
-  }, []);
-  useEffect(() => {
-    window.localStorage.setItem("checkoutStaffName", actorId);
-  }, [actorId]);
 
   useEffect(() => {
     if (!registrationId) {
@@ -105,10 +93,6 @@ export function CheckoutClient({
 
   async function handleCheckout() {
     setError("");
-    if (!actorId.trim()) {
-      setError("Enter your name first.");
-      return;
-    }
     const lines = [
       ...includedAwards.map((a) => ({
         lineType: "AUCTION_WIN" as const,
@@ -127,7 +111,7 @@ export function CheckoutClient({
       const res = await fetch("/api/admin/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ registrationId, lines, method, actorId }),
+        body: JSON.stringify({ registrationId, lines, method }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -145,14 +129,7 @@ export function CheckoutClient({
   return (
     <div className="max-w-xl space-y-6">
       <div className={card}>
-        <label className={labelClass}>Your name (staff)</label>
-        <input
-          value={actorId}
-          onChange={(e) => setActorId(e.target.value)}
-          className={`mt-1 w-full ${input}`}
-        />
-
-        <label className={`mt-4 block ${labelClass}`}>Bidder</label>
+        <label className={labelClass}>Bidder</label>
         <select
           value={registrationId}
           onChange={(e) => setRegistrationId(e.target.value)}

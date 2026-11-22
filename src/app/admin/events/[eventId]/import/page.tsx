@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getStaffRole } from "@/lib/admin/session";
+import { AdminOnlyNotice } from "../../../AdminOnlyNotice";
 import { ImportUploader } from "./ImportUploader";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +12,8 @@ export default async function ImportPage({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
+  if ((await getStaffRole()) !== "admin") return <AdminOnlyNotice />;
+
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) notFound();
 

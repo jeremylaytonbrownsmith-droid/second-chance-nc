@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { ADMIN_SESSION_COOKIE, sessionTokenFor } from "@/lib/admin-auth";
+import { ADMIN_SESSION_COOKIE, STAFF_ROLE_HEADER, resolveStaffRole } from "@/lib/admin-auth";
 
 /**
  * Stopgap password gate for the staff admin surface. There's no real auth
@@ -9,6 +9,14 @@ import { ADMIN_SESSION_COOKIE, sessionTokenFor } from "@/lib/admin-auth";
  * between a public URL and anyone being able to create/void records. Set
  * ADMIN_PASSWORD in the hosting environment to turn it on; if it's unset,
  * the app is left open (e.g. local dev where it hasn't been configured).
+ *
+ * Two roles share this one gate: admin (ADMIN_USERNAME/ADMIN_PASSWORD) and
+ * volunteer (VOLUNTEER_USERNAME/VOLUNTEER_PASSWORD, optional — unset means
+ * no volunteer login exists). Whichever one the session cookie matches is
+ * written to the x-staff-role request header before the request is
+ * forwarded, so every Server Component/Action/Route Handler downstream can
+ * read the *verified* role via headers() — this header is always
+ * overwritten here, so a client can't spoof it by sending its own.
  *
  * Scoped to /admin and /api/admin only — guest-facing routes (/live, /bid,
  * /story) are never gated. Login is a branded page + session cookie
@@ -26,12 +34,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const username = process.env.ADMIN_USERNAME || "secondchance";
-  const expected = await sessionTokenFor(username, password);
   const cookie = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  const role = await resolveStaffRole(cookie);
 
-  if (cookie === expected) {
-    return NextResponse.next();
+  if (role) {
+    const headers = new Headers(request.headers);
+    headers.set(STAFF_ROLE_HEADER, role);
+    return NextResponse.next({ request: { headers } });
   }
 
   if (pathname.startsWith("/api/")) {

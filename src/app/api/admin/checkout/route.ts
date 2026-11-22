@@ -5,17 +5,23 @@ import {
   runCheckout,
 } from "@/lib/checkout/checkout";
 import { toErrorResponse } from "@/lib/http/handle-error";
+import { requireAdminRole } from "@/lib/admin/session";
 
 export async function GET(request: NextRequest) {
-  const registrationId = request.nextUrl.searchParams.get("registrationId");
-  if (!registrationId) {
-    return NextResponse.json(
-      { error: "validation_error", message: "registrationId is required" },
-      { status: 400 },
-    );
+  try {
+    await requireAdminRole(); // payments are admin-only
+    const registrationId = request.nextUrl.searchParams.get("registrationId");
+    if (!registrationId) {
+      return NextResponse.json(
+        { error: "validation_error", message: "registrationId is required" },
+        { status: 400 },
+      );
+    }
+    const outstandingAwards = await getOutstandingAwardsForRegistration(registrationId);
+    return NextResponse.json({ outstandingAwards });
+  } catch (error) {
+    return toErrorResponse(error);
   }
-  const outstandingAwards = await getOutstandingAwardsForRegistration(registrationId);
-  return NextResponse.json({ outstandingAwards });
 }
 
 const lineSchema = z.object({
@@ -38,13 +44,13 @@ const checkoutSchema = z.object({
   registrationId: z.string().min(1),
   lines: z.array(lineSchema).min(1),
   method: z.enum(["CARD", "CASH", "CHECK"]),
-  actorId: z.string().min(1),
 });
 
 export async function POST(request: NextRequest) {
   try {
+    const actorId = await requireAdminRole(); // payments are admin-only
     const body = checkoutSchema.parse(await request.json());
-    const result = await runCheckout(body);
+    const result = await runCheckout({ ...body, actorId });
     return NextResponse.json({
       transactionId: result.transaction.id,
       totalAmountCents: result.totalAmountCents,

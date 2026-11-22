@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { button, card, input, label as labelClass } from "../../../ui";
+import { button, card, label as labelClass } from "../../../ui";
 
 interface ImportRowOutcome {
   rowNumber: number;
@@ -24,7 +24,6 @@ interface ImportSummary {
 
 export function ImportUploader({ eventId, orgId }: { eventId: string; orgId: string }) {
   const [file, setFile] = useState<File | null>(null);
-  const [actorId, setActorId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [summary, setSummary] = useState<ImportSummary | null>(null);
@@ -36,15 +35,10 @@ export function ImportUploader({ eventId, orgId }: { eventId: string; orgId: str
       setError("Choose a .csv or .xlsx file first.");
       return;
     }
-    if (!actorId.trim()) {
-      setError("Enter your name first.");
-      return;
-    }
     const formData = new FormData();
     formData.append("file", file);
     formData.append("eventId", eventId);
     formData.append("orgId", orgId);
-    formData.append("actorId", actorId);
 
     setSubmitting(true);
     try {
@@ -71,13 +65,6 @@ export function ImportUploader({ eventId, orgId }: { eventId: string; orgId: str
           Fund a Need, Cash Gift, Ticket, Sponsorship, Merch), <strong>Amount</strong>, and
           optionally <strong>FMV</strong> and <strong>Designation</strong>.
         </p>
-
-        <label className={`mt-4 block ${labelClass}`}>Your name</label>
-        <input
-          value={actorId}
-          onChange={(e) => setActorId(e.target.value)}
-          className={`mt-1 w-full ${input}`}
-        />
 
         <label className={`mt-4 block ${labelClass}`}>File (.csv or .xlsx)</label>
         <input

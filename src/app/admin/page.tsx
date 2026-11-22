@@ -1,6 +1,7 @@
 import { listOrganizations } from "@/lib/admin/organizations";
 import { listEvents } from "@/lib/admin/events";
 import { getOrCreateDemoEvent } from "@/lib/demo/seed";
+import { getStaffRole } from "@/lib/admin/session";
 import { createEventAction, createOrganizationAction } from "./actions";
 import { HubCard } from "./HubCard";
 import { button, card, input, label as labelClass, table } from "./ui";
@@ -22,10 +23,11 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function AdminHomePage() {
-  const [organizations, events, demoEvent] = await Promise.all([
+  const [organizations, events, demoEvent, isAdmin] = await Promise.all([
     listOrganizations(),
     listEvents(),
     getOrCreateDemoEvent(),
+    getStaffRole().then((role) => role === "admin"),
   ]);
   const eventsByOrg = new Map<string, typeof events>();
   for (const event of events) {
@@ -156,33 +158,35 @@ export default async function AdminHomePage() {
           </table>
         </div>
 
-        <form
-          action={createOrganizationAction}
-          className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
-        >
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Name</label>
-            <input name="name" required className={input} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>EIN</label>
-            <input name="ein" className={input} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Fiscal year start (month)</label>
-            <input
-              name="fiscalYearStart"
-              type="number"
-              min={1}
-              max={12}
-              defaultValue={1}
-              className={`w-20 ${input}`}
-            />
-          </div>
-          <button type="submit" className={button.primary}>
-            Add organization
-          </button>
-        </form>
+        {isAdmin && (
+          <form
+            action={createOrganizationAction}
+            className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
+          >
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Name</label>
+              <input name="name" required className={input} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>EIN</label>
+              <input name="ein" className={input} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Fiscal year start (month)</label>
+              <input
+                name="fiscalYearStart"
+                type="number"
+                min={1}
+                max={12}
+                defaultValue={1}
+                className={`w-20 ${input}`}
+              />
+            </div>
+            <button type="submit" className={button.primary}>
+              Add organization
+            </button>
+          </form>
+        )}
       </section>
 
       <section>
@@ -225,42 +229,44 @@ export default async function AdminHomePage() {
           </table>
         </div>
 
-        <form
-          action={createEventAction}
-          className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
-        >
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Organization</label>
-            <select name="orgId" required className={input}>
-              {organizations.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Event name</label>
-            <input name="name" required className={input} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Event date</label>
-            <input name="eventDate" type="date" required className={input} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Tax year</label>
-            <input
-              name="taxYear"
-              type="number"
-              required
-              defaultValue={new Date().getUTCFullYear()}
-              className={`w-24 ${input}`}
-            />
-          </div>
-          <button type="submit" className={button.primary} disabled={organizations.length === 0}>
-            Add event
-          </button>
-        </form>
+        {isAdmin && (
+          <form
+            action={createEventAction}
+            className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
+          >
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Organization</label>
+              <select name="orgId" required className={input}>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Event name</label>
+              <input name="name" required className={input} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Event date</label>
+              <input name="eventDate" type="date" required className={input} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Tax year</label>
+              <input
+                name="taxYear"
+                type="number"
+                required
+                defaultValue={new Date().getUTCFullYear()}
+                className={`w-24 ${input}`}
+              />
+            </div>
+            <button type="submit" className={button.primary} disabled={organizations.length === 0}>
+              Add event
+            </button>
+          </form>
+        )}
       </section>
     </div>
   );

@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { listAuctionItemCategories, listAuctionItems } from "@/lib/admin/auction-items";
 import { listSolicitationCategories } from "@/lib/admin/solicitations";
+import { getStaffRole } from "@/lib/admin/session";
+import { AdminOnlyNotice } from "../../../../AdminOnlyNotice";
 import { DonationIntakeForm } from "./DonationIntakeForm";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +22,8 @@ export default async function NewDonationPage({
   }>;
 }) {
   const { eventId } = await params;
+  if ((await getStaffRole()) !== "admin") return <AdminOnlyNotice />;
+
   const prefill = await searchParams;
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) notFound();

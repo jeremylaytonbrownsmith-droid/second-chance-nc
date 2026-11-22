@@ -71,7 +71,6 @@ export function DonationIntakeForm({
   const [donorName, setDonorName] = useState(prefillContactName ?? "");
   const [donorEmail, setDonorEmail] = useState(prefillContactEmail ?? "");
   const [donorPhone, setDonorPhone] = useState(prefillContactPhone ?? "");
-  const [actorId, setActorId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ auctionItemId: string } | null>(null);
@@ -112,10 +111,6 @@ export function DonationIntakeForm({
       setError("Enter the donor's name or business name.");
       return;
     }
-    if (!actorId.trim()) {
-      setError("Enter your name.");
-      return;
-    }
 
     setSubmitting(true);
     try {
@@ -133,7 +128,6 @@ export function DonationIntakeForm({
           category: category || undefined,
           estimatedValueCents: Math.round(Number(valueDollars) * 100),
           images: photos,
-          actorId,
         }),
       });
       const data = await res.json();
@@ -312,15 +306,6 @@ export function DonationIntakeForm({
             />
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-col">
-        <label className={labelClass}>Your name</label>
-        <input
-          value={actorId}
-          onChange={(e) => setActorId(e.target.value)}
-          className={`w-48 ${input}`}
-        />
       </div>
 
       <button

@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { listSolicitationCategories, listSolicitations } from "@/lib/admin/solicitations";
 import { createSolicitationAction, setSolicitationStatusAction } from "../../../actions";
+import { getStaffRole } from "@/lib/admin/session";
+import { AdminOnlyNotice } from "../../../AdminOnlyNotice";
 import { SolicitationImportUploader } from "./SolicitationImportUploader";
 import { button, card, input, label as labelClass, table } from "../../../ui";
 
@@ -45,6 +47,8 @@ export default async function SolicitationsPage({
   searchParams: Promise<{ status?: string; category?: string; q?: string; page?: string }>;
 }) {
   const { eventId } = await params;
+  if ((await getStaffRole()) !== "admin") return <AdminOnlyNotice />;
+
   const { status, category, q, page: pageParam } = await searchParams;
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) notFound();

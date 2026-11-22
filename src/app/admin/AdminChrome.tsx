@@ -4,10 +4,19 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { StaffRole } from "@/lib/admin-auth";
 import { ResetDemoButton } from "./ResetDemoButton";
 import { logoutAction } from "./login/actions";
 
-export function AdminChrome({ children, demoMode }: { children: ReactNode; demoMode: boolean }) {
+export function AdminChrome({
+  children,
+  demoMode,
+  role,
+}: {
+  children: ReactNode;
+  demoMode: boolean;
+  role: StaffRole | null;
+}) {
   const pathname = usePathname();
 
   // The login page is its own full-screen, unbranded-nav experience — a
@@ -72,6 +81,11 @@ export function AdminChrome({ children, demoMode }: { children: ReactNode; demoM
             >
               Live board
             </Link>
+            {role && (
+              <span className="ml-1 rounded-full bg-brand-lavender-tint px-2.5 py-1 text-xs font-semibold capitalize text-brand-purple-dark">
+                {role}
+              </span>
+            )}
             {demoMode && (
               <span className="ml-1">
                 <ResetDemoButton />

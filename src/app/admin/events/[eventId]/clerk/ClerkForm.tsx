@@ -10,7 +10,6 @@ interface LogEntry {
 }
 
 export function ClerkForm({ eventId }: { eventId: string }) {
-  const [clerkName, setClerkName] = useState("");
   const [itemNumber, setItemNumber] = useState("");
   const [bidderNumber, setBidderNumber] = useState("");
   const [hammerPrice, setHammerPrice] = useState("");
@@ -19,28 +18,11 @@ export function ClerkForm({ eventId }: { eventId: string }) {
   const itemInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // One-time hydration of a persisted preference from localStorage,
-    // which isn't available during server rendering — there's no way to
-    // know this value before mount, so an effect is the correct place.
-    const stored = window.localStorage.getItem("clerkName");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (stored) setClerkName(stored);
     itemInputRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    window.localStorage.setItem("clerkName", clerkName);
-  }, [clerkName]);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!clerkName.trim()) {
-      setLog((prev) => [
-        { id: crypto.randomUUID(), text: "Enter the clerk's name first.", isError: true },
-        ...prev,
-      ]);
-      return;
-    }
     const hammerPriceCents = Math.round(Number(hammerPrice) * 100);
     setSubmitting(true);
     try {
@@ -52,7 +34,6 @@ export function ClerkForm({ eventId }: { eventId: string }) {
           itemNumber,
           bidderNumber,
           hammerPriceCents,
-          actorId: clerkName,
         }),
       });
       const data = await res.json();
@@ -87,15 +68,6 @@ export function ClerkForm({ eventId }: { eventId: string }) {
 
   return (
     <div className="mx-auto max-w-xl">
-      <div className="mb-4">
-        <label className="text-xs font-medium text-neutral-500">Clerk name (for the audit log)</label>
-        <input
-          value={clerkName}
-          onChange={(e) => setClerkName(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-lg shadow-sm transition-colors focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
-        />
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
         <div>
           <label className="text-sm font-medium text-neutral-700">Item #</label>

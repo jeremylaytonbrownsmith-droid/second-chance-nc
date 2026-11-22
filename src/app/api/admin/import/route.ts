@@ -6,16 +6,17 @@ import {
   type SpreadsheetFormat,
 } from "@/lib/import/spreadsheet-import";
 import { toErrorResponse } from "@/lib/http/handle-error";
+import { requireAdminRole } from "@/lib/admin/session";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
+    const actorId = await requireAdminRole(); // bulk data import is admin-only
     const formData = await request.formData();
     const file = formData.get("file");
     const eventId = formData.get("eventId");
     const orgId = formData.get("orgId");
-    const actorId = formData.get("actorId");
 
     if (!(file instanceof File)) {
       return NextResponse.json(
@@ -23,9 +24,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    if (typeof eventId !== "string" || typeof orgId !== "string" || typeof actorId !== "string" || !actorId.trim()) {
+    if (typeof eventId !== "string" || typeof orgId !== "string") {
       return NextResponse.json(
-        { error: "validation_error", message: "eventId, orgId, and actorId are required" },
+        { error: "validation_error", message: "eventId and orgId are required" },
         { status: 400 },
       );
     }

@@ -1,5 +1,7 @@
 import { listRecentSyncLogs } from "@/lib/etapestry/demo-sync";
 import { retrySyncAction } from "../actions";
+import { getStaffRole } from "@/lib/admin/session";
+import { AdminOnlyNotice } from "../AdminOnlyNotice";
 import { button, table } from "../ui";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +13,8 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default async function SyncLogPage() {
+  if ((await getStaffRole()) !== "admin") return <AdminOnlyNotice />;
+
   const logs = await listRecentSyncLogs();
 
   return (

@@ -16,6 +16,7 @@ import { syncTransactionToEtapestry } from "@/lib/etapestry/demo-sync";
 import { resetDemoData } from "@/lib/demo/seed";
 import { isDemoModeEnabled } from "@/lib/demo/mode";
 import { createSolicitation, setSolicitationStatus } from "@/lib/admin/solicitations";
+import { requireAdminRole } from "@/lib/admin/session";
 import type { SolicitationStatus } from "@prisma/client";
 
 function str(formData: FormData, key: string): string | undefined {
@@ -30,6 +31,7 @@ function cents(formData: FormData, key: string): number | undefined {
 }
 
 export async function createOrganizationAction(formData: FormData) {
+  await requireAdminRole();
   await createOrganization({
     name: String(formData.get("name")),
     ein: str(formData, "ein"),
@@ -39,6 +41,7 @@ export async function createOrganizationAction(formData: FormData) {
 }
 
 export async function createEventAction(formData: FormData) {
+  await requireAdminRole();
   await createEvent({
     orgId: String(formData.get("orgId")),
     name: String(formData.get("name")),
@@ -49,6 +52,7 @@ export async function createEventAction(formData: FormData) {
 }
 
 export async function createConstituentAction(formData: FormData) {
+  await requireAdminRole();
   const isBusiness = formData.get("isBusiness") === "on";
   const eventId = String(formData.get("eventId"));
   await createConstituent({
@@ -64,6 +68,7 @@ export async function createConstituentAction(formData: FormData) {
 }
 
 export async function createItemDonorAction(formData: FormData) {
+  const actorId = await requireAdminRole();
   const eventId = String(formData.get("eventId"));
   await createItemDonor(
     {
@@ -71,12 +76,13 @@ export async function createItemDonorAction(formData: FormData) {
       constituentId: String(formData.get("constituentId")),
       claimedValueCents: cents(formData, "claimedValueDollars") ?? 0,
     },
-    String(formData.get("actorId")),
+    actorId,
   );
   revalidatePath(`/admin/events/${eventId}`);
 }
 
 export async function createAuctionItemAction(formData: FormData) {
+  await requireAdminRole();
   const eventId = String(formData.get("eventId"));
   const itemDonorId = str(formData, "itemDonorId");
   await createAuctionItem({
@@ -95,40 +101,39 @@ export async function createAuctionItemAction(formData: FormData) {
 }
 
 export async function setAuctionItemFmvAction(formData: FormData) {
+  const actorId = await requireAdminRole();
   const eventId = String(formData.get("eventId"));
   await updateAuctionItemFmv(
     String(formData.get("itemId")),
     cents(formData, "fmvDollars") ?? 0,
     String(formData.get("fmvBasis")),
-    String(formData.get("actorId")),
+    actorId,
   );
   revalidatePath(`/admin/events/${eventId}`);
 }
 
 export async function openAuctionItemAction(formData: FormData) {
+  const actorId = await requireAdminRole();
   const eventId = String(formData.get("eventId"));
-  await openAuctionItemForBidding(
-    String(formData.get("itemId")),
-    String(formData.get("actorId")),
-  );
+  await openAuctionItemForBidding(String(formData.get("itemId")), actorId);
   revalidatePath(`/admin/events/${eventId}`);
 }
 
 export async function closeAuctionItemAction(formData: FormData) {
+  const actorId = await requireAdminRole();
   const eventId = String(formData.get("eventId"));
-  await closeAuctionItem(
-    String(formData.get("itemId")),
-    String(formData.get("actorId")),
-  );
+  await closeAuctionItem(String(formData.get("itemId")), actorId);
   revalidatePath(`/admin/events/${eventId}`);
 }
 
 export async function retrySyncAction(formData: FormData) {
+  await requireAdminRole();
   await syncTransactionToEtapestry(String(formData.get("transactionId")));
   revalidatePath("/admin/sync-log");
 }
 
 export async function createSolicitationAction(formData: FormData) {
+  await requireAdminRole();
   const eventId = String(formData.get("eventId"));
   await createSolicitation({
     eventId,
@@ -145,6 +150,7 @@ export async function createSolicitationAction(formData: FormData) {
 }
 
 export async function setSolicitationStatusAction(formData: FormData) {
+  await requireAdminRole();
   const eventId = String(formData.get("eventId"));
   await setSolicitationStatus(
     String(formData.get("solicitationId")),
@@ -154,6 +160,7 @@ export async function setSolicitationStatusAction(formData: FormData) {
 }
 
 export async function resetDemoDataAction() {
+  await requireAdminRole();
   // Server-side gate, not just a hidden button — DEMO_MODE off means this
   // destructive reset refuses to run even if someone calls the action
   // directly. See src/lib/demo/mode.ts.

@@ -13,6 +13,7 @@ import {
   setAuctionItemFmvAction,
 } from "../../actions";
 import { button, card, input, label as labelClass, table } from "../../ui";
+import { getStaffRole } from "@/lib/admin/session";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function EventDetailPage({
 }) {
   const { eventId } = await params;
   const { category, q } = await searchParams;
+  const isAdmin = (await getStaffRole()) === "admin";
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) notFound();
 
@@ -63,21 +65,25 @@ export default async function EventDetailPage({
           <a href={`/admin/events/${eventId}/clerk`} className={button.ghost}>
             Live auction clerk
           </a>
-          <a href={`/admin/events/${eventId}/checkout`} className={button.ghost}>
-            Checkout
-          </a>
           <Link href="/bid" className={button.ghost}>
             Bidder view
           </Link>
-          <a href={`/admin/events/${eventId}/import`} className={button.ghost}>
-            Import spreadsheet
-          </a>
-          <a href={`/admin/events/${eventId}/solicitations`} className={button.ghost}>
-            Solicitations
-          </a>
-          <a href={`/admin/events/${eventId}/donations/new`} className={button.ghost}>
-            Log a donation
-          </a>
+          {isAdmin && (
+            <>
+              <a href={`/admin/events/${eventId}/checkout`} className={button.ghost}>
+                Checkout
+              </a>
+              <a href={`/admin/events/${eventId}/import`} className={button.ghost}>
+                Import spreadsheet
+              </a>
+              <a href={`/admin/events/${eventId}/solicitations`} className={button.ghost}>
+                Solicitations
+              </a>
+              <a href={`/admin/events/${eventId}/donations/new`} className={button.ghost}>
+                Log a donation
+              </a>
+            </>
+          )}
         </div>
       </div>
 
@@ -160,42 +166,43 @@ export default async function EventDetailPage({
                   <td className={table.td}>{formatCents(item.fmvCents)}</td>
                   <td className={table.td}>{item.status}</td>
                   <td className={table.td}>
-                    <div className="flex flex-col gap-2">
-                      {item.fmvCents === null && (
-                        <form action={setAuctionItemFmvAction} className="flex items-center gap-1">
-                          <input type="hidden" name="eventId" value={eventId} />
-                          <input type="hidden" name="itemId" value={item.id} />
-                          <input
-                            name="fmvDollars"
-                            type="number"
-                            step="0.01"
-                            min={0}
-                            placeholder="FMV $"
-                            required
-                            className={`w-20 ${input}`}
-                          />
-                          <input name="fmvBasis" placeholder="basis" required className={`w-28 ${input}`} />
-                          <input name="actorId" placeholder="your name" required className={`w-24 ${input}`} />
-                          <button className={button.primary}>Set FMV</button>
-                        </form>
-                      )}
-                      {item.fmvCents !== null && item.status === "DRAFT" && (
-                        <form action={openAuctionItemAction} className="flex items-center gap-1">
-                          <input type="hidden" name="eventId" value={eventId} />
-                          <input type="hidden" name="itemId" value={item.id} />
-                          <input name="actorId" placeholder="your name" required className={`w-24 ${input}`} />
-                          <button className={button.primary}>Open</button>
-                        </form>
-                      )}
-                      {item.status === "OPEN" && (
-                        <form action={closeAuctionItemAction} className="flex items-center gap-1">
-                          <input type="hidden" name="eventId" value={eventId} />
-                          <input type="hidden" name="itemId" value={item.id} />
-                          <input name="actorId" placeholder="your name" required className={`w-24 ${input}`} />
-                          <button className={button.primary}>Close</button>
-                        </form>
-                      )}
-                    </div>
+                    {isAdmin ? (
+                      <div className="flex flex-col gap-2">
+                        {item.fmvCents === null && (
+                          <form action={setAuctionItemFmvAction} className="flex items-center gap-1">
+                            <input type="hidden" name="eventId" value={eventId} />
+                            <input type="hidden" name="itemId" value={item.id} />
+                            <input
+                              name="fmvDollars"
+                              type="number"
+                              step="0.01"
+                              min={0}
+                              placeholder="FMV $"
+                              required
+                              className={`w-20 ${input}`}
+                            />
+                            <input name="fmvBasis" placeholder="basis" required className={`w-28 ${input}`} />
+                            <button className={button.primary}>Set FMV</button>
+                          </form>
+                        )}
+                        {item.fmvCents !== null && item.status === "DRAFT" && (
+                          <form action={openAuctionItemAction} className="flex items-center gap-1">
+                            <input type="hidden" name="eventId" value={eventId} />
+                            <input type="hidden" name="itemId" value={item.id} />
+                            <button className={button.primary}>Open</button>
+                          </form>
+                        )}
+                        {item.status === "OPEN" && (
+                          <form action={closeAuctionItemAction} className="flex items-center gap-1">
+                            <input type="hidden" name="eventId" value={eventId} />
+                            <input type="hidden" name="itemId" value={item.id} />
+                            <button className={button.primary}>Close</button>
+                          </form>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-neutral-400">Admins only</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -210,42 +217,46 @@ export default async function EventDetailPage({
           </table>
         </div>
 
-        <form action={createAuctionItemAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
-          <input type="hidden" name="eventId" value={eventId} />
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Item #</label>
-            <input name="itemNumber" required className={`w-20 ${input}`} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Title</label>
-            <input name="title" required className={input} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Type</label>
-            <select name="itemType" required className={input}>
-              <option value="SILENT">Silent</option>
-              <option value="LIVE">Live</option>
-              <option value="RAFFLE">Raffle</option>
-              <option value="FIXED_PRICE">Fixed price</option>
-              <option value="FUND_A_NEED">Fund a need</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>FMV $ (optional now)</label>
-            <input name="fmvDollars" type="number" step="0.01" min={0} className={`w-24 ${input}`} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>FMV basis</label>
-            <input name="fmvBasis" className={`w-32 ${input}`} />
-          </div>
-          <button type="submit" className={button.primary}>
-            Add item
-          </button>
-        </form>
-        <p className="mt-2 text-xs text-neutral-500">
-          An item cannot open for bidding until its FMV is set — that gate is
-          enforced server-side.
-        </p>
+        {isAdmin && (
+          <>
+            <form action={createAuctionItemAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
+              <input type="hidden" name="eventId" value={eventId} />
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Item #</label>
+                <input name="itemNumber" required className={`w-20 ${input}`} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Title</label>
+                <input name="title" required className={input} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Type</label>
+                <select name="itemType" required className={input}>
+                  <option value="SILENT">Silent</option>
+                  <option value="LIVE">Live</option>
+                  <option value="RAFFLE">Raffle</option>
+                  <option value="FIXED_PRICE">Fixed price</option>
+                  <option value="FUND_A_NEED">Fund a need</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>FMV $ (optional now)</label>
+                <input name="fmvDollars" type="number" step="0.01" min={0} className={`w-24 ${input}`} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>FMV basis</label>
+                <input name="fmvBasis" className={`w-32 ${input}`} />
+              </div>
+              <button type="submit" className={button.primary}>
+                Add item
+              </button>
+            </form>
+            <p className="mt-2 text-xs text-neutral-500">
+              An item cannot open for bidding until its FMV is set — that gate is
+              enforced server-side.
+            </p>
+          </>
+        )}
       </section>
 
       {/* Item donors */}
@@ -290,37 +301,35 @@ export default async function EventDetailPage({
           </table>
         </div>
 
-        <form action={createItemDonorAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
-          <input type="hidden" name="eventId" value={eventId} />
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Donor</label>
-            <select name="constituentId" required className={input}>
-              {constituents.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.isBusiness ? c.orgName : `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Claimed value $</label>
-            <input
-              name="claimedValueDollars"
-              type="number"
-              step="0.01"
-              min={0}
-              required
-              className={`w-28 ${input}`}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Your name</label>
-            <input name="actorId" required className={`w-32 ${input}`} />
-          </div>
-          <button type="submit" disabled={constituents.length === 0} className={button.primary}>
-            Add item donor
-          </button>
-        </form>
+        {isAdmin && (
+          <form action={createItemDonorAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
+            <input type="hidden" name="eventId" value={eventId} />
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Donor</label>
+              <select name="constituentId" required className={input}>
+                {constituents.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.isBusiness ? c.orgName : `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim()}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Claimed value $</label>
+              <input
+                name="claimedValueDollars"
+                type="number"
+                step="0.01"
+                min={0}
+                required
+                className={`w-28 ${input}`}
+              />
+            </div>
+            <button type="submit" disabled={constituents.length === 0} className={button.primary}>
+              Add item donor
+            </button>
+          </form>
+        )}
       </section>
 
       {/* Constituents */}
@@ -361,32 +370,34 @@ export default async function EventDetailPage({
           </table>
         </div>
 
-        <form action={createConstituentAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
-          <input type="hidden" name="orgId" value={event.orgId} />
-          <input type="hidden" name="eventId" value={eventId} />
-          <label className="flex items-center gap-1.5 text-xs text-neutral-500">
-            <input type="checkbox" name="isBusiness" /> Business donor
-          </label>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>First name</label>
-            <input name="firstName" className={input} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Last name</label>
-            <input name="lastName" className={input} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Org name (business)</label>
-            <input name="orgName" className={input} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Email</label>
-            <input name="email" type="email" className={input} />
-          </div>
-          <button type="submit" className={button.primary}>
-            Add constituent
-          </button>
-        </form>
+        {isAdmin && (
+          <form action={createConstituentAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
+            <input type="hidden" name="orgId" value={event.orgId} />
+            <input type="hidden" name="eventId" value={eventId} />
+            <label className="flex items-center gap-1.5 text-xs text-neutral-500">
+              <input type="checkbox" name="isBusiness" /> Business donor
+            </label>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>First name</label>
+              <input name="firstName" className={input} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Last name</label>
+              <input name="lastName" className={input} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Org name (business)</label>
+              <input name="orgName" className={input} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Email</label>
+              <input name="email" type="email" className={input} />
+            </div>
+            <button type="submit" className={button.primary}>
+              Add constituent
+            </button>
+          </form>
+        )}
       </section>
     </div>
   );
