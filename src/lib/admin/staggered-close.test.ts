@@ -22,6 +22,7 @@ describe.skipIf(!dbAvailable)("staggered close by category", () => {
       const items = await prisma.auctionItem.findMany({ where: { eventId: { in: eventIds } } });
       const itemIds = items.map((i) => i.id);
       await prisma.bid.deleteMany({ where: { itemId: { in: itemIds } } });
+      await prisma.award.deleteMany({ where: { itemId: { in: itemIds } } });
       await prisma.auctionItem.deleteMany({ where: { eventId: { in: eventIds } } });
       await prisma.registration.deleteMany({ where: { eventId: { in: eventIds } } });
       await prisma.constituent.deleteMany({ where: { orgId } });
@@ -86,9 +87,35 @@ describe.skipIf(!dbAvailable)("staggered close by category", () => {
       prisma.auctionItem.findUniqueOrThrow({ where: { id: future.id } }),
       prisma.auctionItem.findUniqueOrThrow({ where: { id: noClose.id } }),
     ]);
-    expect(pastAfter.status).toBe("CLOSED");
+    // No bids on "past" — the sweep resolves it to UNSOLD, not a bare
+    // CLOSED with no decision made (see closeItemAndAward).
+    expect(pastAfter.status).toBe("UNSOLD");
     expect(futureAfter.status).toBe("OPEN");
     expect(noCloseAfter.status).toBe("OPEN");
+  });
+
+  it("closeExpiredItemsForEvent awards the item to whoever's leading when it expires", async () => {
+    const { org, event } = await setupEvent();
+    const item = await prisma.auctionItem.create({
+      data: {
+        eventId: event.id, itemNumber: "P2", title: "Past With Bid", itemType: AuctionItemType.SILENT,
+        status: AuctionItemStatus.OPEN, startingBidCents: 1_000, bidIncrementCents: 100,
+        closeAt: new Date(Date.now() - 60_000),
+      },
+    });
+    const constituent = await prisma.constituent.create({ data: { orgId: org.id, firstName: "Winner", lastName: "Bidder" } });
+    const registration = await prisma.registration.create({
+      data: { eventId: event.id, constituentId: constituent.id, bidderNumber: 201 },
+    });
+    await prisma.bid.create({ data: { itemId: item.id, registrationId: registration.id, amountCents: 1_000, source: "MOBILE" } });
+
+    await closeExpiredItemsForEvent(event.id);
+
+    const after = await prisma.auctionItem.findUniqueOrThrow({ where: { id: item.id } });
+    expect(after.status).toBe("AWARDED");
+    const award = await prisma.award.findFirst({ where: { itemId: item.id } });
+    expect(award?.registrationId).toBe(registration.id);
+    expect(award?.amountCents).toBe(1_000);
   });
 
   it("placeBid refuses a bid once closeAt has passed, even if the sweep hasn't run yet", async () => {
@@ -109,7 +136,41 @@ describe.skipIf(!dbAvailable)("staggered close by category", () => {
       placeBid({ itemId: item.id, registrationId: registration.id, amountCents: 1_000, source: "MOBILE" }),
     ).rejects.toThrow(ItemNotOpenError);
 
+    // The rejected attempt was never recorded as a bid, so there's no
+    // leader to award — the attempt itself resolves the item to UNSOLD.
     const after = await prisma.auctionItem.findUniqueOrThrow({ where: { id: item.id } });
-    expect(after.status).toBe("CLOSED"); // the attempt itself closes it out
+    expect(after.status).toBe("UNSOLD");
+  });
+
+  it("placeBid awards the item to the standing leader when a late bid attempt closes it out", async () => {
+    const { org, event } = await setupEvent();
+    const item = await prisma.auctionItem.create({
+      data: {
+        eventId: event.id, itemNumber: "E2", title: "Expired With Leader", itemType: AuctionItemType.SILENT,
+        status: AuctionItemStatus.OPEN, startingBidCents: 1_000, bidIncrementCents: 100,
+        closeAt: new Date(Date.now() + 500), // still open for a moment
+      },
+    });
+    const leader = await prisma.constituent.create({ data: { orgId: org.id, firstName: "Leader", lastName: "Bidder" } });
+    const leaderReg = await prisma.registration.create({
+      data: { eventId: event.id, constituentId: leader.id, bidderNumber: 301 },
+    });
+    await placeBid({ itemId: item.id, registrationId: leaderReg.id, amountCents: 1_000, source: "MOBILE" });
+
+    await new Promise((resolve) => setTimeout(resolve, 600)); // let closeAt pass
+
+    const late = await prisma.constituent.create({ data: { orgId: org.id, firstName: "Late", lastName: "Bidder" } });
+    const lateReg = await prisma.registration.create({
+      data: { eventId: event.id, constituentId: late.id, bidderNumber: 302 },
+    });
+    await expect(
+      placeBid({ itemId: item.id, registrationId: lateReg.id, amountCents: 1_100, source: "MOBILE" }),
+    ).rejects.toThrow(ItemNotOpenError);
+
+    const after = await prisma.auctionItem.findUniqueOrThrow({ where: { id: item.id } });
+    expect(after.status).toBe("AWARDED");
+    const award = await prisma.award.findFirst({ where: { itemId: item.id } });
+    expect(award?.registrationId).toBe(leaderReg.id);
+    expect(award?.amountCents).toBe(1_000);
   });
 });

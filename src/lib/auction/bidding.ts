@@ -44,7 +44,7 @@ class ItemExpiredError extends ItemNotOpenError {
 
 async function closeExpiredItem(error: unknown): Promise<void> {
   if (error instanceof ItemExpiredError) {
-    await prisma.auctionItem.update({ where: { id: error.itemId }, data: { status: "CLOSED" } });
+    await prisma.$transaction((tx) => closeItemAndAward(tx, error.itemId));
   }
 }
 
@@ -208,6 +208,55 @@ async function currentPositions(
     select: { registrationId: true, amountCents: true, isMaxBid: true, placedAt: true },
   });
   return latestPositionPerRegistration(bids);
+}
+
+export interface CloseItemAndAwardResult {
+  status: "AWARDED" | "UNSOLD";
+  awardId?: string;
+  amountCents?: number;
+  registrationId?: string;
+}
+
+/**
+ * The missing half of "close an item": closing silent bidding was only
+ * ever flipping the status column (whether done by an admin's Close
+ * button, the staggered-close sweep, or placeBid's own defense-in-depth
+ * check) without ever resolving who won — a pre-existing gap flagged
+ * during item 9's work and left alone then to avoid scope creep. Item
+ * 17's full event-flow test (check in -> bid -> outbid -> close ->
+ * checkout -> receipt -> sync) can't actually reach checkout without
+ * this, so fixing it here: whoever's leading when an item closes gets
+ * an Award at the resolved current price, same as the live clerk's
+ * hammer-price entry produces; with no bids at all, the item is UNSOLD,
+ * not just silently CLOSED with nothing to show for it.
+ */
+export async function closeItemAndAward(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  itemId: string,
+): Promise<CloseItemAndAwardResult> {
+  const item = await tx.auctionItem.findUniqueOrThrow({ where: { id: itemId } });
+  const positions = await currentPositions(tx, itemId);
+  const state = resolveBidPositions(positions, item.startingBidCents ?? 0, item.bidIncrementCents ?? 0);
+
+  if (state.leaderRegistrationId) {
+    const award = await tx.award.create({
+      data: {
+        itemId,
+        registrationId: state.leaderRegistrationId,
+        amountCents: state.currentAmountCents,
+      },
+    });
+    await tx.auctionItem.update({ where: { id: itemId }, data: { status: "AWARDED" } });
+    return {
+      status: "AWARDED",
+      awardId: award.id,
+      amountCents: state.currentAmountCents,
+      registrationId: state.leaderRegistrationId,
+    };
+  }
+
+  await tx.auctionItem.update({ where: { id: itemId }, data: { status: "UNSOLD" } });
+  return { status: "UNSOLD" };
 }
 
 export async function placeBid(input: PlaceBidInput): Promise<PlaceBidResult> {

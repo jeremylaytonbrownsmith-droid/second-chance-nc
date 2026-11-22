@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auditedMutation } from "@/lib/audit";
 import { assertItemCanOpenForBidding } from "@/lib/money/substantiation";
+import { closeItemAndAward } from "@/lib/auction/bidding";
 import type { CsvColumn } from "@/lib/csv/to-csv";
 import type { AuctionItem } from "@prisma/client";
 import { AuctionItemStatus } from "@prisma/client";
@@ -126,11 +127,12 @@ export async function closeAuctionItem(
     entityId: id,
     action: "close",
     before: (tx) => tx.auctionItem.findUniqueOrThrow({ where: { id } }),
-    mutate: (tx) =>
-      tx.auctionItem.update({
-        where: { id },
-        data: { status: AuctionItemStatus.CLOSED },
-      }),
+    // Resolves to AWARDED (to whoever's leading, at the current price) or
+    // UNSOLD (no bids) — see closeItemAndAward in src/lib/auction/bidding.ts.
+    mutate: async (tx) => {
+      await closeItemAndAward(tx, id);
+      return tx.auctionItem.findUniqueOrThrow({ where: { id } });
+    },
     after: async (_tx, result) => result,
   });
 }
@@ -185,10 +187,25 @@ export async function setCategoryCloseTime(
  * a last-moment guard, in case a bid slips in between sweeps.
  */
 export async function closeExpiredItemsForEvent(eventId: string): Promise<void> {
-  await prisma.auctionItem.updateMany({
+  const expired = await prisma.auctionItem.findMany({
     where: { eventId, status: AuctionItemStatus.OPEN, closeAt: { lte: new Date() } },
-    data: { status: AuctionItemStatus.CLOSED },
+    select: { id: true },
   });
+  // Resolving each one (AWARDED to the leader, or UNSOLD) needs its own
+  // bid state, so this can no longer be a single bulk updateMany the way
+  // a plain status flip could — the common case (nothing expired since
+  // the last sweep) is still a single cheap query either way.
+  for (const { id } of expired) {
+    await auditedMutation({
+      actorId: "system:staggered-close",
+      entityType: "AuctionItem",
+      entityId: id,
+      action: "auto_close_expired",
+      before: (tx) => tx.auctionItem.findUniqueOrThrow({ where: { id } }),
+      mutate: (tx) => closeItemAndAward(tx, id),
+      after: async (_tx, result) => result,
+    });
+  }
 }
 
 export const auctionItemCsvColumns: CsvColumn<AuctionItem>[] = [

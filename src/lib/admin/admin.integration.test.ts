@@ -148,8 +148,10 @@ describe.skipIf(!dbAvailable)("admin CRUD integration", () => {
     const opened = await openAuctionItemForBidding(item.id, "test-actor");
     expect(opened.status).toBe("OPEN");
 
+    // No bids were ever placed, so closing resolves to UNSOLD, not just
+    // "CLOSED" with nothing decided — see closeItemAndAward.
     const closed = await closeAuctionItem(item.id, "test-actor");
-    expect(closed.status).toBe("CLOSED");
+    expect(closed.status).toBe("UNSOLD");
 
     const auditRows = await prisma.auditLog.findMany({
       where: { entityType: "AuctionItem", entityId: item.id },
