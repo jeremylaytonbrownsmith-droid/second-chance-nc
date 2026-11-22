@@ -10,6 +10,7 @@ import {
   requiresWrittenAcknowledgment,
 } from "@/lib/money/substantiation";
 import { syncTransactionToEtapestry } from "@/lib/etapestry/demo-sync";
+import { sendReceiptEmail } from "@/lib/email/send-receipt";
 import type { Transaction, TransactionMethod } from "@prisma/client";
 
 /**
@@ -162,6 +163,14 @@ export async function runCheckout(input: RunCheckoutInput): Promise<CheckoutResu
   // checkout — it stays visible and replayable from the sync log instead.
   syncTransactionToEtapestry(transaction.id).catch((err) => {
     console.error("eTapestry sync failed for transaction", transaction.id, err);
+  });
+
+  // Same best-effort contract as the eTapestry sync above — email send
+  // failures are logged, never thrown, and never undo a completed,
+  // already-paid checkout. sendReceiptEmail itself already catches and
+  // logs internally; this catch is a backstop in case it doesn't.
+  sendReceiptEmail(transaction.id).catch((err) => {
+    console.error("Receipt email failed for transaction", transaction.id, err);
   });
 
   return {
