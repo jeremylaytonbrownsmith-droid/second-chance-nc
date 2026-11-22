@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { runCheckout } from "@/lib/checkout/checkout";
+import { PaymentDeclinedError, runCheckout } from "@/lib/checkout/checkout";
 import { InvalidMoneyInputError } from "@/lib/money/deductible";
 
 /**
@@ -32,6 +32,12 @@ export async function POST(request: NextRequest) {
       totalDeductibleCents: result.totalDeductibleCents,
     });
   } catch (error) {
+    if (error instanceof PaymentDeclinedError) {
+      return NextResponse.json(
+        { error: "payment_declined", message: error.message },
+        { status: 402 },
+      );
+    }
     if (error instanceof InvalidMoneyInputError) {
       return NextResponse.json(
         { error: "validation_error", message: error.message },
