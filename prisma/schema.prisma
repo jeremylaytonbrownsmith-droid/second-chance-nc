@@ -410,6 +410,9 @@ model Award {
   amountCents Int
   awardedAt   DateTime @default(now())
 
+  // Event night, item 13: pickup tracking. Null means still unclaimed.
+  pickedUpAt DateTime?
+
   voidedAt   DateTime?
   voidReason String?
 

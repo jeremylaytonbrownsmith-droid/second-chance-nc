@@ -79,6 +79,9 @@ export default async function EventDetailPage({
           <a href={`/admin/events/${eventId}/clerk`} className={button.ghost}>
             Live auction clerk
           </a>
+          <a href={`/admin/events/${eventId}/pickup`} className={button.ghost}>
+            Pickup
+          </a>
           <Link href="/bid" className={button.ghost}>
             Bidder view
           </Link>
