@@ -63,6 +63,9 @@ export default async function EventDetailPage({
           {event.taxYear} · {event.status}
         </p>
         <div className="mt-3 flex flex-wrap gap-1 text-sm">
+          <a href={`/admin/events/${eventId}/checkin`} className={button.ghost}>
+            Check in
+          </a>
           <a href={`/admin/events/${eventId}/live`} className={button.ghost}>
             Live auction board
           </a>

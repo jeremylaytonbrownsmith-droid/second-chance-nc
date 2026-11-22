@@ -104,7 +104,7 @@ export function AdminChrome({
                 {role}
               </span>
             )}
-            {demoMode && (
+            {demoMode && role === "admin" && (
               <span className="ml-1">
                 <ResetDemoButton />
               </span>
