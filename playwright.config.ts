@@ -1,6 +1,14 @@
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+
+// This sandbox's pre-installed Chromium lives at a fixed path; a GitHub
+// Actions runner (or anywhere else) won't have that path at all and
+// should fall back to Playwright's own `npx playwright install chromium`
+// browser instead of failing to launch.
+const SANDBOX_CHROMIUM_PATH = "/opt/pw-browsers/chromium";
+const executablePath = existsSync(SANDBOX_CHROMIUM_PATH) ? SANDBOX_CHROMIUM_PATH : undefined;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -20,7 +28,7 @@ export default defineConfig({
     baseURL,
     trace: "off",
     launchOptions: {
-      executablePath: "/opt/pw-browsers/chromium",
+      ...(executablePath ? { executablePath } : {}),
       args: ["--no-sandbox"],
     },
   },
