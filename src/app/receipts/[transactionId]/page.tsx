@@ -134,7 +134,7 @@ export default async function GuestReceiptPage({
             </p>
           )}
 
-          <p className="mt-6 text-center text-xs text-neutral-400">
+          <p className="mt-6 text-center text-xs text-neutral-500">
             {transaction.event.organization.name}
             {transaction.event.organization.ein ? ` · EIN ${transaction.event.organization.ein}` : ""}
           </p>

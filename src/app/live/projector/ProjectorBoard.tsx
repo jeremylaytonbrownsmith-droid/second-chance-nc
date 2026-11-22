@@ -124,7 +124,7 @@ export function ProjectorBoard({
             <p className="mt-1 text-7xl font-extrabold tracking-tight text-brand-purple-dark">
               {money(totalRaisedCents)}
               {goalCents !== null && (
-                <span className="ml-4 text-3xl font-semibold text-neutral-400">
+                <span className="ml-4 text-3xl font-semibold text-neutral-500">
                   of {money(goalCents)} goal
                 </span>
               )}
@@ -170,7 +170,7 @@ export function ProjectorBoard({
             </div>
 
             <div>
-              <div className="text-xl font-semibold uppercase tracking-wide text-neutral-400">
+              <div className="text-xl font-semibold uppercase tracking-wide text-neutral-500">
                 {item.category ?? item.itemType}
               </div>
               <h2 className="mt-1 text-5xl font-extrabold leading-tight text-neutral-900">
@@ -191,10 +191,10 @@ export function ProjectorBoard({
               <span
                 className={`mt-6 inline-block rounded-full px-4 py-1.5 text-lg font-semibold ${
                   item.status === "OPEN"
-                    ? "bg-green-100 text-green-700"
+                    ? "bg-green-100 text-green-800"
                     : item.status === "AWARDED"
                       ? "bg-brand-lavender/30 text-brand-purple-dark"
-                      : "bg-neutral-100 text-neutral-500"
+                      : "bg-neutral-100 text-neutral-600"
                 }`}
               >
                 {STATUS_LABELS[item.status] ?? item.status}

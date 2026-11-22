@@ -251,7 +251,7 @@ export default async function EventDetailPage({
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-neutral-400">Admins only</span>
+                      <span className="text-xs text-neutral-500">Admins only</span>
                     )}
                   </td>
                 </tr>

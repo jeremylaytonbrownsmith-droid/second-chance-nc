@@ -273,7 +273,7 @@ export function DonationIntakeForm({
           min={0}
           className={`w-32 ${input}`}
         />
-        <p className="mt-1 text-xs text-neutral-400">
+        <p className="mt-1 text-xs text-neutral-500">
           Used as both the item&rsquo;s FMV and the donor&rsquo;s claimed value —
           adjust either later if they should differ.
         </p>

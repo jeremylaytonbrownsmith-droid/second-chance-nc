@@ -115,11 +115,11 @@ export function PickupList({
                   <td className={table.td}>{money(a.amountCents)}</td>
                   <td className={table.td}>
                     {a.pickedUpAt ? (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
                         Picked up
                       </span>
                     ) : (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
                         Unclaimed
                       </span>
                     )}

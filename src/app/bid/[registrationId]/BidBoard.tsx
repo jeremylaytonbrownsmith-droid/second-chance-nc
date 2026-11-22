@@ -224,7 +224,7 @@ export function BidBoard({
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
                   {item.itemNumber} {item.category ? `· ${item.category}` : ""}
                 </div>
                 <div className="truncate text-base font-bold leading-tight text-neutral-900">{item.title}</div>
@@ -247,7 +247,7 @@ export function BidBoard({
                     </div>
                   </div>
                   {youAreLeading && (
-                    <span className="shrink-0 rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-700">
+                    <span className="shrink-0 rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-800">
                       You&apos;re winning!
                     </span>
                   )}

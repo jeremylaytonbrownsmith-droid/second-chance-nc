@@ -155,7 +155,7 @@ export function CheckInForm({ eventId, orgId }: { eventId: string; orgId: string
           placeholder="Start typing…"
           className={`mt-1 w-full ${input}`}
         />
-        {searching && <p className="mt-2 text-xs text-neutral-400">Searching…</p>}
+        {searching && <p className="mt-2 text-xs text-neutral-500">Searching…</p>}
         <div className="mt-3 space-y-2">
           {results.map((c) => (
             <div key={c.id} className="flex items-center justify-between rounded-lg border border-neutral-200 p-2 text-sm">

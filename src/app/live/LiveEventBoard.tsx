@@ -143,7 +143,7 @@ export function LiveEventBoard({ items: initialItems }: { items: ItemViewModel[]
               </div>
             </div>
             <div className="p-5">
-              <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                 {item.category ?? item.itemType}
               </div>
               <div className="mt-0.5 line-clamp-2 text-lg font-bold leading-tight text-neutral-900">{item.title}</div>
@@ -169,10 +169,10 @@ export function LiveEventBoard({ items: initialItems }: { items: ItemViewModel[]
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
                     item.status === "OPEN"
-                      ? "bg-green-100 text-green-700"
+                      ? "bg-green-100 text-green-800"
                       : item.status === "AWARDED"
                         ? "bg-brand-lavender/30 text-brand-purple-dark"
-                        : "bg-neutral-100 text-neutral-500"
+                        : "bg-neutral-100 text-neutral-600"
                   }`}
                 >
                   {STATUS_LABELS[item.status] ?? item.status}
@@ -196,7 +196,7 @@ export function LiveEventBoard({ items: initialItems }: { items: ItemViewModel[]
               <span className="text-neutral-800">
                 bid {money(entry.amountCents)} on {entry.itemTitle}
               </span>
-              <div className="mt-0.5 text-xs text-neutral-400">
+              <div className="mt-0.5 text-xs text-neutral-500">
                 {new Date(entry.serverTimestamp).toLocaleTimeString()}
               </div>
             </div>

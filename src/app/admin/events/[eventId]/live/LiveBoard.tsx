@@ -150,7 +150,7 @@ export function LiveBoard({
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
                     {item.itemType} · {item.itemNumber}
                   </div>
                   <div className="text-lg font-semibold">{item.title}</div>
@@ -216,7 +216,7 @@ export function LiveBoard({
                 #{entry.bidderNumber ?? "?"}
               </span>{" "}
               bid {money(entry.amountCents)} on {entry.itemNumber} — {entry.itemTitle}
-              <div className="text-xs text-neutral-400">
+              <div className="text-xs text-neutral-500">
                 {new Date(entry.serverTimestamp).toLocaleTimeString()}
               </div>
             </div>

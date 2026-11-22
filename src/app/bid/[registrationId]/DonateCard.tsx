@@ -80,7 +80,7 @@ export function DonateCard({ registrationId }: { registrationId: string }) {
 
       <div className="mt-3 flex gap-2">
         <div className="relative flex-1">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500">
             $
           </span>
           <input
