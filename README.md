@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Second Chance Pet Adoptions — Auction & Giving System
 
-## Getting Started
+A gala auction and giving system: one record of truth per donor per
+event, syncing clean gift records into eTapestry, replacing a
+spreadsheet-and-hand-keying workflow.
 
-First, run the development server:
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — how it's built: directory
+  map, data model, the adapter pattern, auth, testing, deploying, and the
+  gotchas worth not re-discovering. Start here to get oriented.
+- **[CLAUDE.md](./CLAUDE.md)** — the hard, non-negotiable rules (money,
+  tax, deletes) and build conventions.
+
+## Getting started
 
 ```bash
+cp .env.example .env   # fill in at least DATABASE_URL
+npm install
+npx prisma migrate deploy
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Everything runs
+fully demo-functional with nothing beyond `DATABASE_URL` set — every
+external integration (eTapestry, email, SMS, payments) defaults to a
+fake adapter that records what it would have done instead of requiring
+real credentials. See `.env.example` for what each one needs to turn on
+for real.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Does |
+|---|---|
+| `npm run dev` | Dev server |
+| `npm run build` | `prisma migrate deploy` + production build |
+| `npm test` | Unit/integration tests (Vitest) |
+| `npm run test:e2e` | End-to-end tests (Playwright) — needs a running dev server and a reachable database |
+| `npm run lint` | ESLint |
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+CI (`.github/workflows/ci.yml`) runs all of the above against a real
+Postgres service container on every push.
