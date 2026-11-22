@@ -43,12 +43,22 @@ export default async function LiveAuctionBoardPage({
           DEMO MODE — the bidder buttons below simulate real phones bidding
         </div>
       )}
-      <div>
-        <h1 className="text-xl font-semibold">Live Auction Board — {event.name}</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          What you&rsquo;d project on a screen at the venue — every item&rsquo;s current
-          price, updating the instant a bid lands, from anyone&rsquo;s phone.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Live Auction Board — {event.name}</h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            The operator view — every item&rsquo;s current price, updating the
+            instant a bid lands, from anyone&rsquo;s phone.
+          </p>
+        </div>
+        <a
+          href="/live/projector"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="whitespace-nowrap text-sm font-medium text-brand-purple hover:underline"
+        >
+          Open projector mode →
+        </a>
       </div>
 
       <LiveBoard

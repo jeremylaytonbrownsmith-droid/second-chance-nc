@@ -54,6 +54,12 @@ export default async function LiveEventPage() {
             <span className="text-sm font-medium text-neutral-500">Live</span>
           </Link>
           <Link
+            href="/live/projector"
+            className="text-sm font-medium text-neutral-500 transition-colors hover:text-brand-purple"
+          >
+            Projector mode →
+          </Link>
+          <Link
             href="/bid"
             className="rounded-lg bg-brand-purple px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-purple/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-purple-dark hover:shadow-xl"
           >
