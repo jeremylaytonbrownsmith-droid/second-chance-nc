@@ -87,6 +87,9 @@ export default async function EventDetailPage({
               <a href={`/admin/events/${eventId}/checkout`} className={button.ghost}>
                 Checkout
               </a>
+              <a href={`/admin/events/${eventId}/fund-a-need`} className={button.ghost}>
+                Fund a need
+              </a>
               <a href={`/admin/events/${eventId}/import`} className={button.ghost}>
                 Import spreadsheet
               </a>
