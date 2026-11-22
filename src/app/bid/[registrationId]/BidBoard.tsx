@@ -11,6 +11,7 @@ interface ItemViewModel {
   image: string | null;
   fmvCents: number | null;
   bidIncrementCents: number | null;
+  buyNowCents: number | null;
   status: string;
   currentAmountCents: number;
   leadingBidderNumber: number | null;
@@ -35,6 +36,8 @@ export function BidBoard({
   const [items, setItems] = useState(initialItems);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<Record<string, boolean>>({});
+  const [maxBidOpenFor, setMaxBidOpenFor] = useState<string | null>(null);
+  const [maxBidValue, setMaxBidValue] = useState("");
 
   // Item list is fixed for the lifetime of this page in the demo — one
   // SSE connection per item, closed on unmount.
@@ -69,7 +72,7 @@ export function BidBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function placeBid(item: ItemViewModel, amountCents: number) {
+  async function placeBid(item: ItemViewModel, amountCents: number, isMaxBid = false) {
     setPending((p) => ({ ...p, [item.id]: true }));
     setErrors((e) => ({ ...e, [item.id]: "" }));
     try {
@@ -81,17 +84,52 @@ export function BidBoard({
           registrationId,
           amountCents,
           source: "MOBILE",
+          isMaxBid,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         setErrors((e) => ({ ...e, [item.id]: data.message ?? "Bid failed" }));
+      } else if (isMaxBid) {
+        setMaxBidOpenFor(null);
+        setMaxBidValue("");
       }
     } catch {
       setErrors((e) => ({
         ...e,
         [item.id]: "Network error — venue wifi may be down. Try again.",
       }));
+    } finally {
+      setPending((p) => ({ ...p, [item.id]: false }));
+    }
+  }
+
+  async function buyNow(item: ItemViewModel) {
+    if (!window.confirm(`Buy "${item.title}" right now for $${((item.buyNowCents ?? 0) / 100).toFixed(2)}? This ends bidding immediately.`)) {
+      return;
+    }
+    setPending((p) => ({ ...p, [item.id]: true }));
+    setErrors((e) => ({ ...e, [item.id]: "" }));
+    try {
+      const res = await fetch("/api/bid/buy-now", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId: item.id, registrationId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrors((e) => ({ ...e, [item.id]: data.message ?? "Buy it now failed" }));
+      } else {
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? { ...it, status: "AWARDED", currentAmountCents: data.award.amountCents, leadingBidderNumber: bidderNumber }
+              : it,
+          ),
+        );
+      }
+    } catch {
+      setErrors((e) => ({ ...e, [item.id]: "Network error — venue wifi may be down. Try again." }));
     } finally {
       setPending((p) => ({ ...p, [item.id]: false }));
     }
@@ -200,15 +238,58 @@ export function BidBoard({
 
             <div className="border-t border-neutral-100 px-4 py-3">
               {item.status !== "OPEN" ? (
-                <div className="text-sm text-neutral-500">Bidding closed.</div>
+                <div className="text-sm text-neutral-500">
+                  {item.status === "AWARDED" && youAreLeading ? "Sold to you! 🎉" : "Bidding closed."}
+                </div>
               ) : (
-                <button
-                  disabled={pending[item.id]}
-                  onClick={() => placeBid(item, nextBid)}
-                  className="w-full rounded-lg bg-brand-purple px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:bg-brand-purple-dark hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {pending[item.id] ? "Placing bid…" : `Bid $${(nextBid / 100).toFixed(2)}`}
-                </button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      disabled={pending[item.id]}
+                      onClick={() => placeBid(item, nextBid)}
+                      className="flex-1 rounded-lg bg-brand-purple px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:bg-brand-purple-dark hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {pending[item.id] ? "Placing bid…" : `Bid $${(nextBid / 100).toFixed(2)}`}
+                    </button>
+                    {item.buyNowCents && (
+                      <button
+                        disabled={pending[item.id]}
+                        onClick={() => buyNow(item)}
+                        className="shrink-0 rounded-lg border border-brand-purple px-3 py-2.5 text-sm font-semibold text-brand-purple transition-colors hover:bg-brand-lavender-tint disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Buy now ${(item.buyNowCents / 100).toFixed(0)}
+                      </button>
+                    )}
+                  </div>
+
+                  {maxBidOpenFor === item.id ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={(nextBid / 100).toFixed(2)}
+                        value={maxBidValue}
+                        onChange={(e) => setMaxBidValue(e.target.value)}
+                        placeholder={`Max $ (at least $${(nextBid / 100).toFixed(2)})`}
+                        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-brand-purple focus:outline-none"
+                      />
+                      <button
+                        disabled={pending[item.id] || !maxBidValue}
+                        onClick={() => placeBid(item, Math.round(Number(maxBidValue) * 100), true)}
+                        className="shrink-0 rounded-lg bg-brand-purple-dark px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Set
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setMaxBidOpenFor(item.id)}
+                      className="w-full text-center text-xs font-medium text-brand-purple hover:underline"
+                    >
+                      Set a max bid — we&apos;ll bid for you up to that amount
+                    </button>
+                  )}
+                </div>
               )}
 
               {errors[item.id] && <div className="mt-2 text-sm text-red-600">{errors[item.id]}</div>}

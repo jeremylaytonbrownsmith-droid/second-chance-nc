@@ -4,11 +4,105 @@ import {
   BID_RATE_LIMIT_MS,
   BidRateLimitError,
   BidTooLowError,
+  BuyNowUnavailableError,
+  buyItNow,
   getItemBidState,
   ItemNotOpenError,
   placeBid,
+  resolveBidPositions,
 } from "./bidding";
 import { AuctionItemStatus, AuctionItemType } from "@prisma/client";
+
+describe("resolveBidPositions (pure)", () => {
+  const now = new Date("2027-01-01T00:00:00Z");
+  const t = (secondsLater: number) => new Date(now.getTime() + secondsLater * 1000);
+
+  it("shows the starting bid with no positions at all", () => {
+    const state = resolveBidPositions([], 1_000, 100);
+    expect(state).toEqual({ currentAmountCents: 1_000, leaderRegistrationId: null });
+  });
+
+  it("a plain bid displays at exactly its own amount when uncontested", () => {
+    const state = resolveBidPositions(
+      [{ registrationId: "a", amountCents: 1_500, isMaxBid: false, placedAt: t(0) }],
+      1_000,
+      100,
+    );
+    expect(state).toEqual({ currentAmountCents: 1_500, leaderRegistrationId: "a" });
+  });
+
+  it("a solo max bid reveals nothing — displays only the starting bid", () => {
+    const state = resolveBidPositions(
+      [{ registrationId: "a", amountCents: 5_000, isMaxBid: true, placedAt: t(0) }],
+      1_000,
+      100,
+    );
+    expect(state).toEqual({ currentAmountCents: 1_000, leaderRegistrationId: "a" });
+  });
+
+  it("a max bid shows only enough to beat a plain bid by one increment", () => {
+    const state = resolveBidPositions(
+      [
+        { registrationId: "plain", amountCents: 2_000, isMaxBid: false, placedAt: t(0) },
+        { registrationId: "proxy", amountCents: 10_000, isMaxBid: true, placedAt: t(1) },
+      ],
+      1_000,
+      100,
+    );
+    expect(state).toEqual({ currentAmountCents: 2_100, leaderRegistrationId: "proxy" });
+  });
+
+  it("two competing max bids settle one increment above the loser's ceiling", () => {
+    const state = resolveBidPositions(
+      [
+        { registrationId: "low-max", amountCents: 3_000, isMaxBid: true, placedAt: t(0) },
+        { registrationId: "high-max", amountCents: 5_000, isMaxBid: true, placedAt: t(1) },
+      ],
+      1_000,
+      100,
+    );
+    expect(state).toEqual({ currentAmountCents: 3_100, leaderRegistrationId: "high-max" });
+  });
+
+  it("a max bid never displays above its own ceiling, even if that's below the pressure floor", () => {
+    // high-max's ceiling (3,000) is less than low-max's ceiling + increment (2,100) would
+    // suggest is "needed" the other way around — here high-max's own ceiling is the binding cap.
+    const state = resolveBidPositions(
+      [
+        { registrationId: "a", amountCents: 2_900, isMaxBid: true, placedAt: t(0) },
+        { registrationId: "b", amountCents: 3_000, isMaxBid: true, placedAt: t(1) },
+      ],
+      1_000,
+      100,
+    );
+    // b leads (higher ceiling); displayed is min(3000, 2900+100=3000) = 3000.
+    expect(state).toEqual({ currentAmountCents: 3_000, leaderRegistrationId: "b" });
+  });
+
+  it("an earlier max bid wins an exact tie", () => {
+    const state = resolveBidPositions(
+      [
+        { registrationId: "first", amountCents: 4_000, isMaxBid: true, placedAt: t(0) },
+        { registrationId: "second", amountCents: 4_000, isMaxBid: true, placedAt: t(1) },
+      ],
+      1_000,
+      100,
+    );
+    expect(state.leaderRegistrationId).toBe("first");
+  });
+
+  it("only the latest position per registration counts", () => {
+    const state = resolveBidPositions(
+      [
+        { registrationId: "a", amountCents: 1_000, isMaxBid: false, placedAt: t(0) },
+        { registrationId: "a", amountCents: 2_000, isMaxBid: false, placedAt: t(1) },
+      ],
+      1_000,
+      100,
+    );
+    expect(state).toEqual({ currentAmountCents: 2_000, leaderRegistrationId: "a" });
+  });
+});
 
 let dbAvailable = true;
 try {
@@ -188,5 +282,143 @@ describe.skipIf(!dbAvailable)("placeBid", () => {
     const state = await getItemBidState(item.id);
     expect(state.currentAmountCents).toBe(1_000);
     expect(state.bidCount).toBe(1);
+  });
+
+  it("a max bid wins immediately but only reveals the starting bid when uncontested", async () => {
+    const { item, makeRegistration } = await setupOpenItem("max-solo");
+    const reg = await makeRegistration(101);
+
+    const result = await placeBid({
+      itemId: item.id,
+      registrationId: reg.id,
+      amountCents: 5_000,
+      source: "MOBILE",
+      isMaxBid: true,
+    });
+
+    expect(result.currentAmountCents).toBe(1_000); // starting bid, nothing revealed
+    const state = await getItemBidState(item.id);
+    expect(state.currentAmountCents).toBe(1_000);
+    expect(state.leadingBidderNumber).toBe(101);
+  });
+
+  it("a plain bid against a standing max bid auto-raises the proxy to stay ahead by one increment", async () => {
+    const { item, makeRegistration } = await setupOpenItem("max-vs-plain", { startingBidCents: 1_000, bidIncrementCents: 100 });
+    const proxy = await makeRegistration(101);
+    const challenger = await makeRegistration(102);
+
+    await placeBid({ itemId: item.id, registrationId: proxy.id, amountCents: 5_000, source: "MOBILE", isMaxBid: true });
+
+    // The proxy is already the (silent) leader at the starting bid, so a new
+    // bid still has to clear it by one increment — 1,000 + 100 = 1,100 — even
+    // though nothing visible has been "shown" yet.
+    const challengeResult = await placeBid({
+      itemId: item.id,
+      registrationId: challenger.id,
+      amountCents: 1_100,
+      source: "MOBILE",
+    });
+    // Resolution is global, not "whatever you just submitted" — the proxy
+    // auto-raises past the challenger's bid in the very same result.
+    expect(challengeResult.currentAmountCents).toBe(1_200);
+    const state = await getItemBidState(item.id);
+    expect(state.currentAmountCents).toBe(1_200);
+    expect(state.leadingBidderNumber).toBe(101);
+  });
+
+  it("rejects a plain bid that doesn't clear the silently-leading max bid by an increment", async () => {
+    const { item, makeRegistration } = await setupOpenItem("max-blocks-low-plain");
+    const proxy = await makeRegistration(101);
+    const challenger = await makeRegistration(102);
+
+    await placeBid({ itemId: item.id, registrationId: proxy.id, amountCents: 5_000, source: "MOBILE", isMaxBid: true });
+
+    // The proxy is already leading at the starting bid (1,000); a bid merely
+    // matching the starting bid doesn't clear it by the required increment.
+    await expect(
+      placeBid({ itemId: item.id, registrationId: challenger.id, amountCents: 1_000, source: "MOBILE" }),
+    ).rejects.toThrow(BidTooLowError);
+  });
+
+  it("two competing max bids settle one increment above the loser's ceiling", async () => {
+    const { item, makeRegistration } = await setupOpenItem("max-vs-max");
+    const lowMax = await makeRegistration(101);
+    const highMax = await makeRegistration(102);
+
+    await placeBid({ itemId: item.id, registrationId: lowMax.id, amountCents: 3_000, source: "MOBILE", isMaxBid: true });
+    await placeBid({ itemId: item.id, registrationId: highMax.id, amountCents: 5_000, source: "MOBILE", isMaxBid: true });
+
+    const state = await getItemBidState(item.id);
+    expect(state.currentAmountCents).toBe(3_100);
+    expect(state.leadingBidderNumber).toBe(102);
+  });
+});
+
+describe.skipIf(!dbAvailable)("buyItNow", () => {
+  const createdOrgIds: string[] = [];
+
+  afterAll(async () => {
+    if (!dbAvailable) return;
+    for (const orgId of createdOrgIds) {
+      const events = await prisma.event.findMany({ where: { orgId } });
+      const eventIds = events.map((e) => e.id);
+      const items = await prisma.auctionItem.findMany({ where: { eventId: { in: eventIds } } });
+      const itemIds = items.map((i) => i.id);
+      await prisma.award.deleteMany({ where: { itemId: { in: itemIds } } });
+      await prisma.bid.deleteMany({ where: { itemId: { in: itemIds } } });
+      await prisma.auctionItem.deleteMany({ where: { eventId: { in: eventIds } } });
+      await prisma.registration.deleteMany({ where: { eventId: { in: eventIds } } });
+      await prisma.constituent.deleteMany({ where: { orgId } });
+      await prisma.event.deleteMany({ where: { orgId } });
+      await prisma.organization.delete({ where: { id: orgId } });
+    }
+  });
+
+  async function setupBuyNowItem(label: string, buyNowCents: number | null) {
+    const org = await prisma.organization.create({ data: { name: `Buy Now Test Org ${label} ${Date.now()}` } });
+    createdOrgIds.push(org.id);
+    const event = await prisma.event.create({
+      data: { orgId: org.id, name: `Buy Now Test ${label}`, eventDate: new Date("2027-04-15T00:00:00Z"), taxYear: 2027 },
+    });
+    const item = await prisma.auctionItem.create({
+      data: {
+        eventId: event.id,
+        itemNumber: "B1",
+        title: "Buy Now Item",
+        itemType: AuctionItemType.SILENT,
+        fmvCents: 1_000,
+        status: AuctionItemStatus.OPEN,
+        startingBidCents: 1_000,
+        bidIncrementCents: 100,
+        buyNowCents: buyNowCents ?? undefined,
+      },
+    });
+    const constituent = await prisma.constituent.create({ data: { orgId: org.id, firstName: "Buyer", lastName: "One" } });
+    const registration = await prisma.registration.create({
+      data: { eventId: event.id, constituentId: constituent.id, bidderNumber: 201 },
+    });
+    return { item, registration };
+  }
+
+  it("ends bidding and awards the item at the buy-now price", async () => {
+    const { item, registration } = await setupBuyNowItem("basic", 10_000);
+    const award = await buyItNow(item.id, registration.id, "admin");
+
+    expect(award.amountCents).toBe(10_000);
+    expect(award.registrationId).toBe(registration.id);
+
+    const updated = await prisma.auctionItem.findUniqueOrThrow({ where: { id: item.id } });
+    expect(updated.status).toBe("AWARDED");
+  });
+
+  it("refuses when the item has no buy-now price set", async () => {
+    const { item, registration } = await setupBuyNowItem("no-price", null);
+    await expect(buyItNow(item.id, registration.id, "admin")).rejects.toThrow(BuyNowUnavailableError);
+  });
+
+  it("refuses once bidding already reached the buy-now price", async () => {
+    const { item, registration } = await setupBuyNowItem("already-there", 2_000);
+    await placeBid({ itemId: item.id, registrationId: registration.id, amountCents: 2_000, source: "MOBILE" });
+    await expect(buyItNow(item.id, registration.id, "admin")).rejects.toThrow(BuyNowUnavailableError);
   });
 });

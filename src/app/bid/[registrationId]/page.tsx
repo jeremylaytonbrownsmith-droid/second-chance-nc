@@ -80,6 +80,7 @@ export default async function BidderPage({
             image: item.images[0] ?? null,
             fmvCents: item.fmvCents,
             bidIncrementCents: item.bidIncrementCents,
+            buyNowCents: item.buyNowCents,
             status: item.status,
             currentAmountCents: state.currentAmountCents,
             leadingBidderNumber: state.leadingBidderNumber,

@@ -13,6 +13,7 @@ const placeBidSchema = z.object({
   registrationId: z.string().min(1),
   amountCents: z.number().int().positive(),
   source: z.enum(["MOBILE", "PAPER", "AUCTIONEER"]).default("MOBILE"),
+  isMaxBid: z.boolean().default(false),
 });
 
 export async function POST(request: NextRequest) {
