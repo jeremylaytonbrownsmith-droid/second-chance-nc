@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { runCheckout } from "@/lib/checkout/checkout";
+import { mergeConstituents } from "@/lib/admin/constituents";
 import { getDonorYearEndStatement, listDonorYearEndStatementsForOrg } from "./year-end";
 
 let dbAvailable = true;
@@ -116,5 +117,49 @@ describe.skipIf(!dbAvailable)("year-end statements", () => {
     const statements = await listDonorYearEndStatementsForOrg(org.id, 2027);
     expect(statements).toHaveLength(1); // same constituent both registrations
     expect(statements[0].totalAmountCents).toBe(10_000);
+  });
+
+  it("combines a merged-away duplicate's giving into the surviving record's statement", async () => {
+    const org = await prisma.organization.create({ data: { name: `Merge Statement Test ${Date.now()}` } });
+    createdOrgIds.push(org.id);
+    const event = await prisma.event.create({
+      data: { orgId: org.id, name: "Gala", eventDate: new Date("2027-04-15T00:00:00Z"), taxYear: 2027 },
+    });
+    const survivor = await prisma.constituent.create({
+      data: { orgId: org.id, firstName: "Jamie", lastName: "Rivera", email: "jamie@example.com" },
+    });
+    const duplicate = await prisma.constituent.create({
+      data: { orgId: org.id, firstName: "Jamie", lastName: "Rivera", email: "jamie@example.com" },
+    });
+    const regSurvivor = await prisma.registration.create({
+      data: { eventId: event.id, constituentId: survivor.id, bidderNumber: 401 },
+    });
+    const regDuplicate = await prisma.registration.create({
+      data: { eventId: event.id, constituentId: duplicate.id, bidderNumber: 402 },
+    });
+
+    await runCheckout({
+      registrationId: regSurvivor.id,
+      lines: [{ lineType: "CASH_GIFT", amountCents: 4_000 }],
+      method: "CASH",
+      actorId: "admin",
+    });
+    await runCheckout({
+      registrationId: regDuplicate.id,
+      lines: [{ lineType: "CASH_GIFT", amountCents: 6_000 }],
+      method: "CASH",
+      actorId: "admin",
+    });
+
+    // Before merging, they're two separate donors.
+    const beforeMerge = await listDonorYearEndStatementsForOrg(org.id, 2027);
+    expect(beforeMerge).toHaveLength(2);
+
+    await mergeConstituents(duplicate.id, survivor.id);
+
+    const afterMerge = await listDonorYearEndStatementsForOrg(org.id, 2027);
+    expect(afterMerge).toHaveLength(1);
+    expect(afterMerge[0].constituentId).toBe(survivor.id);
+    expect(afterMerge[0].totalAmountCents).toBe(10_000);
   });
 });

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createOrganization } from "@/lib/admin/organizations";
 import { createEvent } from "@/lib/admin/events";
-import { createConstituent } from "@/lib/admin/constituents";
+import { createConstituent, mergeConstituents } from "@/lib/admin/constituents";
 import { createItemDonor } from "@/lib/admin/item-donors";
 import {
   closeAuctionItem,
@@ -207,5 +207,22 @@ export async function resetDemoDataAction(): Promise<ActionState> {
     revalidatePath(`/admin/events/${event.id}`);
     revalidatePath("/admin/sync-log");
     return "Demo data reset.";
+  });
+}
+
+export async function mergeConstituentsAction(_prev: ActionState, formData: FormData) {
+  return runAction(async () => {
+    await requireAdminRole();
+    const orgId = String(formData.get("orgId"));
+    const targetId = String(formData.get("targetId"));
+    const sourceIds = formData
+      .getAll("sourceId")
+      .map(String)
+      .filter((id) => id && id !== targetId);
+    for (const sourceId of sourceIds) {
+      await mergeConstituents(sourceId, targetId);
+    }
+    revalidatePath(`/admin/duplicates?orgId=${orgId}`);
+    return `Merged ${sourceIds.length} record${sourceIds.length === 1 ? "" : "s"} — giving history now combines under the kept record.`;
   });
 }

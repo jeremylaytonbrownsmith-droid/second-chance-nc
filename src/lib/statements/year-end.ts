@@ -69,9 +69,29 @@ export async function listDonorYearEndStatementsForOrg(
     },
   });
 
+  // A donor merged into another (src/lib/admin/duplicate-detection.ts +
+  // mergeConstituents) keeps their own historical rows — gifts stay
+  // attributed to whichever record they were made under, nothing gets
+  // rewritten. A statement must still combine them, or a merged donor's
+  // prior giving silently disappears from their own year-end total. All
+  // constituents for the org fit comfortably in memory at gala scale, so
+  // resolving the merge chain here (rather than a recursive query) is the
+  // simplest correct option.
+  const allConstituents = await prisma.constituent.findMany({ where: { orgId } });
+  const byId = new Map(allConstituents.map((c) => [c.id, c]));
+  function resolveToSurvivor(id: string): (typeof allConstituents)[number] {
+    let current = byId.get(id)!;
+    const seen = new Set<string>([current.id]);
+    while (current.mergedIntoId && byId.has(current.mergedIntoId) && !seen.has(current.mergedIntoId)) {
+      current = byId.get(current.mergedIntoId)!;
+      seen.add(current.id);
+    }
+    return current;
+  }
+
   const byConstituent = new Map<string, DonorYearEndStatement>();
   for (const line of lines) {
-    const constituent = line.transaction.registration.constituent;
+    const constituent = resolveToSurvivor(line.transaction.registration.constituent.id);
     let statement = byConstituent.get(constituent.id);
     if (!statement) {
       statement = {
