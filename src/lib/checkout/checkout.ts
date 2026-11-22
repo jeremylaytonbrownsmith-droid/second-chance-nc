@@ -11,6 +11,7 @@ import {
 } from "@/lib/money/substantiation";
 import { syncTransactionToEtapestry } from "@/lib/etapestry/demo-sync";
 import { sendReceiptEmail } from "@/lib/email/send-receipt";
+import { getPaymentProcessor } from "@/lib/payments";
 import type { Transaction, TransactionMethod } from "@prisma/client";
 
 /**
@@ -19,6 +20,13 @@ import type { Transaction, TransactionMethod } from "@prisma/client";
  * used: every line is run through the same tested function from
  * src/lib/money/deductible.ts, never re-implemented here.
  */
+
+export class PaymentDeclinedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PaymentDeclinedError";
+  }
+}
 
 export interface CheckoutLineInput {
   lineType: TransactionLineType;
@@ -118,6 +126,34 @@ export async function runCheckout(input: RunCheckoutInput): Promise<CheckoutResu
 
   const transactionId = randomUUID();
 
+  // The actual charge happens here, before any DB write — a card decline
+  // must leave nothing behind (no PAID transaction, no consumed awards),
+  // so the bidder can retry with a different method. CASH/CHECK/IN_KIND
+  // never touch a processor at all; that money already changed hands in
+  // person. transactionId doubles as the processor idempotency key, so a
+  // retried request (network hiccup, double submit) can never charge the
+  // same card twice for the same checkout.
+  let processor: string;
+  let processorRef: string;
+  if (input.method === "CARD") {
+    const paymentProcessor = getPaymentProcessor();
+    const result = await paymentProcessor.charge({
+      amountCents: totalAmountCents,
+      customerRef: registration.paymentCustomerRef,
+      paymentMethodRef: registration.paymentMethodRef,
+      description: `Checkout for registration ${input.registrationId}`,
+      idempotencyKey: transactionId,
+    });
+    if (!result.ok) {
+      throw new PaymentDeclinedError(result.declineReason);
+    }
+    processor = paymentProcessor.name;
+    processorRef = result.processorRef;
+  } else {
+    processor = input.method.toLowerCase();
+    processorRef = `${processor}-${transactionId.slice(0, 8)}`;
+  }
+
   const transaction = await auditedMutation({
     actorId: input.actorId,
     entityType: "Transaction",
@@ -131,8 +167,8 @@ export async function runCheckout(input: RunCheckoutInput): Promise<CheckoutResu
           registrationId: input.registrationId,
           eventId: registration.eventId,
           totalCents: totalAmountCents,
-          processor: "demo",
-          processorRef: `demo-charge-${transactionId.slice(0, 8)}`,
+          processor,
+          processorRef,
           status: "PAID",
           paidAt: new Date(),
           method: input.method,
