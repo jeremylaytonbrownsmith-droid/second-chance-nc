@@ -71,6 +71,14 @@ export function AdminChrome({
             >
               Sync Log
             </a>
+            {role === "admin" && (
+              <a
+                href="/admin/statements"
+                className="rounded-md px-2.5 py-1.5 font-medium text-neutral-600 transition-colors hover:bg-brand-lavender-tint hover:text-brand-purple-dark"
+              >
+                Statements
+              </a>
+            )}
             <Link
               href="/bid"
               className="rounded-md px-2.5 py-1.5 font-medium text-neutral-600 transition-colors hover:bg-brand-lavender-tint hover:text-brand-purple-dark"
