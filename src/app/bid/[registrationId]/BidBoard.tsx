@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { CloseCountdown } from "@/components/CloseCountdown";
+import { SyncStatusBanner } from "@/components/SyncStatusBanner";
+import { enqueueBid, subscribeBidQueue, subscribeBidQueueOutcomes } from "@/lib/offline/bid-queue";
 
 interface ItemViewModel {
   id: string;
@@ -40,6 +42,31 @@ export function BidBoard({
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [maxBidOpenFor, setMaxBidOpenFor] = useState<string | null>(null);
   const [maxBidValue, setMaxBidValue] = useState("");
+  // Event night, item 15: every bid goes through the offline queue
+  // (src/lib/offline/bid-queue.ts), not a direct fetch — it sends right
+  // away when online (feels identical to before) and queues for
+  // automatic retry if the network is down. This tracks which item has
+  // one outstanding so its button can say so, and whether the browser is
+  // currently offline so that label is accurate ("sending" vs "queued").
+  const [queuedRequestByItem, setQueuedRequestByItem] = useState<Record<string, string>>({});
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => subscribeBidQueue((state) => setIsOffline(state.isOffline)), []);
+
+  useEffect(() => {
+    return subscribeBidQueueOutcomes((outcome) => {
+      setQueuedRequestByItem((prev) => {
+        const itemId = Object.keys(prev).find((id) => prev[id] === outcome.clientRequestId);
+        if (!itemId) return prev;
+        const next = { ...prev };
+        delete next[itemId];
+        if (!outcome.ok) {
+          setErrors((e) => ({ ...e, [itemId]: outcome.message ?? "Queued bid was rejected." }));
+        }
+        return next;
+      });
+    });
+  }, []);
 
   // Item list is fixed for the lifetime of this page in the demo — one
   // SSE connection per item, closed on unmount.
@@ -74,35 +101,19 @@ export function BidBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function placeBid(item: ItemViewModel, amountCents: number, isMaxBid = false) {
-    setPending((p) => ({ ...p, [item.id]: true }));
+  function placeBid(item: ItemViewModel, amountCents: number, isMaxBid = false) {
     setErrors((e) => ({ ...e, [item.id]: "" }));
-    try {
-      const res = await fetch("/api/bid", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          itemId: item.id,
-          registrationId,
-          amountCents,
-          source: "MOBILE",
-          isMaxBid,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setErrors((e) => ({ ...e, [item.id]: data.message ?? "Bid failed" }));
-      } else if (isMaxBid) {
-        setMaxBidOpenFor(null);
-        setMaxBidValue("");
-      }
-    } catch {
-      setErrors((e) => ({
-        ...e,
-        [item.id]: "Network error — venue wifi may be down. Try again.",
-      }));
-    } finally {
-      setPending((p) => ({ ...p, [item.id]: false }));
+    const clientRequestId = enqueueBid({
+      itemId: item.id,
+      registrationId,
+      amountCents,
+      source: "MOBILE",
+      isMaxBid,
+    });
+    setQueuedRequestByItem((prev) => ({ ...prev, [item.id]: clientRequestId }));
+    if (isMaxBid) {
+      setMaxBidOpenFor(null);
+      setMaxBidValue("");
     }
   }
 
@@ -143,6 +154,7 @@ export function BidBoard({
 
   return (
     <div className="space-y-4">
+      <SyncStatusBanner />
       {items.length > 0 && (
         <div className="rounded-2xl border border-brand-lavender/50 bg-white p-5 shadow-sm">
           <div className="flex items-end justify-between gap-4">
@@ -252,15 +264,19 @@ export function BidBoard({
                 <div className="space-y-2">
                   <div className="flex gap-2">
                     <button
-                      disabled={pending[item.id]}
+                      disabled={!!queuedRequestByItem[item.id]}
                       onClick={() => placeBid(item, nextBid)}
                       className="flex-1 rounded-lg bg-brand-purple px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:bg-brand-purple-dark hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {pending[item.id] ? "Placing bid…" : `Bid $${(nextBid / 100).toFixed(2)}`}
+                      {queuedRequestByItem[item.id]
+                        ? isOffline
+                          ? "Queued — offline"
+                          : "Sending…"
+                        : `Bid $${(nextBid / 100).toFixed(2)}`}
                     </button>
                     {item.buyNowCents && (
                       <button
-                        disabled={pending[item.id]}
+                        disabled={pending[item.id] || !!queuedRequestByItem[item.id]}
                         onClick={() => buyNow(item)}
                         className="shrink-0 rounded-lg border border-brand-purple px-3 py-2.5 text-sm font-semibold text-brand-purple transition-colors hover:bg-brand-lavender-tint disabled:cursor-not-allowed disabled:opacity-50"
                       >
@@ -281,7 +297,7 @@ export function BidBoard({
                         className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-brand-purple focus:outline-none"
                       />
                       <button
-                        disabled={pending[item.id] || !maxBidValue}
+                        disabled={!!queuedRequestByItem[item.id] || !maxBidValue}
                         onClick={() => placeBid(item, Math.round(Number(maxBidValue) * 100), true)}
                         className="shrink-0 rounded-lg bg-brand-purple-dark px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                       >

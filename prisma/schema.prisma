@@ -392,6 +392,12 @@ model Bid {
   source      BidSource
   isMaxBid    Boolean   @default(false)
 
+  // Event night, item 15 (offline resilience): the client generates this
+  // once per bid attempt and resends it on every retry. A repeat with the
+  // same id means "did this already land?", not "place it again" — see
+  // placeBid in src/lib/auction/bidding.ts.
+  clientRequestId String? @unique
+
   voidedAt   DateTime?
   voidReason String?
 

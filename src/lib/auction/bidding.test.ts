@@ -352,6 +352,94 @@ describe.skipIf(!dbAvailable)("placeBid", () => {
     expect(state.currentAmountCents).toBe(3_100);
     expect(state.leadingBidderNumber).toBe(102);
   });
+
+  // Event night, item 15: offline resilience. The client's queue resends
+  // the same clientRequestId on every retry of one bid attempt; these
+  // confirm a retry never creates a second bid or double-counts.
+  it("a repeated clientRequestId doesn't create a second bid", async () => {
+    const { item, makeRegistration } = await setupOpenItem("idempotent-retry");
+    const reg = await makeRegistration(101);
+    const clientRequestId = "test-client-request-id-1";
+
+    const first = await placeBid({
+      itemId: item.id,
+      registrationId: reg.id,
+      amountCents: 1_000,
+      source: "MOBILE",
+      clientRequestId,
+    });
+    const replay = await placeBid({
+      itemId: item.id,
+      registrationId: reg.id,
+      amountCents: 1_000,
+      source: "MOBILE",
+      clientRequestId,
+    });
+
+    expect(replay.bid.id).toBe(first.bid.id);
+    expect(replay.currentAmountCents).toBe(1_000);
+    expect(replay.bidCount).toBe(1); // not 2 — the retry didn't insert a second bid
+
+    const bidRows = await prisma.bid.count({ where: { itemId: item.id } });
+    expect(bidRows).toBe(1);
+  });
+
+  it("a replay still reflects state that changed since the original bid landed", async () => {
+    const { item, makeRegistration } = await setupOpenItem("idempotent-replay-then-outbid");
+    const reg1 = await makeRegistration(101);
+    const reg2 = await makeRegistration(102);
+    const clientRequestId = "test-client-request-id-2";
+
+    await placeBid({
+      itemId: item.id,
+      registrationId: reg1.id,
+      amountCents: 1_000,
+      source: "MOBILE",
+      clientRequestId,
+    });
+    await placeBid({ itemId: item.id, registrationId: reg2.id, amountCents: 1_100, source: "MOBILE" });
+
+    // reg1's client retries its original (already-landed) request after
+    // reg2 has since outbid it — the replay must report the current
+    // state, not stale data from the moment it first landed.
+    const replay = await placeBid({
+      itemId: item.id,
+      registrationId: reg1.id,
+      amountCents: 1_000,
+      source: "MOBILE",
+      clientRequestId,
+    });
+    expect(replay.currentAmountCents).toBe(1_100);
+    expect(replay.bidCount).toBe(2);
+
+    const bidRows = await prisma.bid.count({ where: { itemId: item.id } });
+    expect(bidRows).toBe(2);
+  });
+
+  it("a replay does not re-trip the rate limit a fresh bid would hit", async () => {
+    const { item, makeRegistration } = await setupOpenItem("idempotent-vs-rate-limit");
+    const reg = await makeRegistration(101);
+    const clientRequestId = "test-client-request-id-3";
+
+    await placeBid({
+      itemId: item.id,
+      registrationId: reg.id,
+      amountCents: 1_000,
+      source: "MOBILE",
+      clientRequestId,
+    });
+
+    // Immediately retried, well inside the rate-limit window — must
+    // still succeed as a replay, not fail as "bidding too fast".
+    const replay = await placeBid({
+      itemId: item.id,
+      registrationId: reg.id,
+      amountCents: 1_000,
+      source: "MOBILE",
+      clientRequestId,
+    });
+    expect(replay.bidCount).toBe(1);
+  });
 });
 
 describe.skipIf(!dbAvailable)("buyItNow", () => {

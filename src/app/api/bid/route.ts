@@ -14,6 +14,10 @@ const placeBidSchema = z.object({
   amountCents: z.number().int().positive(),
   source: z.enum(["MOBILE", "PAPER", "AUCTIONEER"]).default("MOBILE"),
   isMaxBid: z.boolean().default(false),
+  // Event night, item 15 (offline resilience): set by the client's
+  // offline queue so a retried bid is recognized as a replay, not a new
+  // bid — see placeBid in src/lib/auction/bidding.ts.
+  clientRequestId: z.string().min(1).optional(),
 });
 
 export async function POST(request: NextRequest) {

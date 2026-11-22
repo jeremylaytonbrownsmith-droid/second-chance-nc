@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { auditedMutation } from "@/lib/audit";
-import type { Award, Bid, BidSource } from "@prisma/client";
+import { Prisma, type Award, type Bid, type BidSource } from "@prisma/client";
 import { assertCents } from "@/lib/money/deductible";
 import { publishBidUpdate } from "@/lib/realtime/notify";
 import { notifyOutbid } from "@/lib/sms/outbid-notification";
@@ -84,6 +84,14 @@ export interface PlaceBidInput {
    * necessarily what ends up displayed. Defaults to false (a plain bid,
    * today's pre-proxy-bidding behavior, preserved exactly). */
   isMaxBid?: boolean;
+  /** Event night, item 15 (offline resilience): a client-generated id,
+   * resent unchanged on every retry of the same bid attempt. If a bid
+   * with this id already exists, this call is a replay of one that
+   * already landed (the request succeeded but the response never made
+   * it back before the connection dropped) — return that bid's current
+   * state instead of inserting a second one or re-running the rate
+   * limit / minimum-bid checks a retry would otherwise fail. */
+  clientRequestId?: string;
 }
 
 export interface PlaceBidResult {
@@ -207,6 +215,26 @@ export async function placeBid(input: PlaceBidInput): Promise<PlaceBidResult> {
 
   return prisma
     .$transaction(async (tx) => {
+      if (input.clientRequestId) {
+        const existing = await tx.bid.findUnique({ where: { clientRequestId: input.clientRequestId } });
+        if (existing) {
+          const item = await tx.auctionItem.findUniqueOrThrow({ where: { id: input.itemId } });
+          const positions = await currentPositions(tx, input.itemId);
+          const state = resolveBidPositions(positions, item.startingBidCents ?? 0, item.bidIncrementCents ?? 0);
+          const bidCount = await tx.bid.count({ where: { itemId: input.itemId, voidedAt: null } });
+          return {
+            bid: existing,
+            currentAmountCents: state.currentAmountCents,
+            leaderRegistrationId: state.leaderRegistrationId,
+            // Same as leaderRegistrationId on purpose — a replay never
+            // fires a second outbid notification for a bid that already
+            // notified the first time it landed.
+            previousLeaderRegistrationId: state.leaderRegistrationId,
+            bidCount,
+          };
+        }
+      }
+
       const item = await lockItemRow(tx, input.itemId);
 
       const recentBid = await tx.bid.findFirst({
@@ -244,6 +272,7 @@ export async function placeBid(input: PlaceBidInput): Promise<PlaceBidResult> {
           amountCents: input.amountCents,
           source: input.source,
           isMaxBid: input.isMaxBid ?? false,
+          clientRequestId: input.clientRequestId,
         },
       });
 
@@ -264,6 +293,34 @@ export async function placeBid(input: PlaceBidInput): Promise<PlaceBidResult> {
       };
     })
     .catch(async (err) => {
+      // Two concurrent retries of the exact same clientRequestId (the
+      // offline queue only retries sequentially, but a rare double-submit
+      // from the client is cheap to guard against): one wins the insert,
+      // the other hits the unique constraint. Recover the same way the
+      // in-transaction replay branch above does, rather than surfacing a
+      // raw constraint-violation 500 for what is, from the bidder's
+      // perspective, a bid that already succeeded.
+      if (
+        input.clientRequestId &&
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002" &&
+        (err.meta?.target as string[] | undefined)?.includes("clientRequestId")
+      ) {
+        const existing = await prisma.bid.findUniqueOrThrow({
+          where: { clientRequestId: input.clientRequestId },
+        });
+        const item = await prisma.auctionItem.findUniqueOrThrow({ where: { id: input.itemId } });
+        const positions = await currentPositions(prisma, input.itemId);
+        const state = resolveBidPositions(positions, item.startingBidCents ?? 0, item.bidIncrementCents ?? 0);
+        const bidCount = await prisma.bid.count({ where: { itemId: input.itemId, voidedAt: null } });
+        return {
+          bid: existing,
+          currentAmountCents: state.currentAmountCents,
+          leaderRegistrationId: state.leaderRegistrationId,
+          previousLeaderRegistrationId: state.leaderRegistrationId,
+          bidCount,
+        };
+      }
       await closeExpiredItem(err);
       throw err;
     })
