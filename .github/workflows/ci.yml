@@ -41,6 +41,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma migrate deploy
+      # A fresh checkout has no .next/types yet, which is where Next.js's
+      # App Router puts ambient types like `LayoutProps`— without this,
+      # tsc fails with "Cannot find name 'LayoutProps'" even though the
+      # code is correct. `next typegen` generates just the types, no
+      # full build, so lint/test can still run before the real build step.
+      - run: npx next typegen
       - run: npx tsc --noEmit -p .
       - run: npm run lint
       - run: npm test
