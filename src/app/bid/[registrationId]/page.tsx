@@ -2,6 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getItemBidState } from "@/lib/auction/bidding";
+import { closeExpiredItemsForEvent } from "@/lib/admin/auction-items";
 import { BidBoard } from "./BidBoard";
 import { DonateCard } from "./DonateCard";
 
@@ -19,6 +20,7 @@ export default async function BidderPage({
   });
   if (!registration) notFound();
 
+  await closeExpiredItemsForEvent(registration.eventId);
   const items = await prisma.auctionItem.findMany({
     where: {
       eventId: registration.eventId,
@@ -81,6 +83,7 @@ export default async function BidderPage({
             fmvCents: item.fmvCents,
             bidIncrementCents: item.bidIncrementCents,
             buyNowCents: item.buyNowCents,
+            closeAt: item.closeAt?.toISOString() ?? null,
             status: item.status,
             currentAmountCents: state.currentAmountCents,
             leadingBidderNumber: state.leadingBidderNumber,

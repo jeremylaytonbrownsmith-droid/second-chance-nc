@@ -9,6 +9,7 @@ import {
   closeAuctionItem,
   createAuctionItem,
   openAuctionItemForBidding,
+  setCategoryCloseTime,
   updateAuctionItemFmv,
   type CreateAuctionItemInput,
 } from "@/lib/admin/auction-items";
@@ -148,6 +149,18 @@ export async function closeAuctionItemAction(_prev: ActionState, formData: FormD
     await closeAuctionItem(String(formData.get("itemId")), actorId);
     revalidatePath(`/admin/events/${eventId}`);
     return "Item closed.";
+  });
+}
+
+export async function setCategoryCloseTimeAction(_prev: ActionState, formData: FormData) {
+  return runAction(async () => {
+    const actorId = await requireAdminRole();
+    const eventId = String(formData.get("eventId"));
+    const category = String(formData.get("category"));
+    const closeAt = new Date(String(formData.get("closeAt")));
+    const { count } = await setCategoryCloseTime(eventId, category, closeAt, actorId);
+    revalidatePath(`/admin/events/${eventId}`);
+    return `Set a close time for ${count} item${count === 1 ? "" : "s"} in "${category}".`;
   });
 }
 

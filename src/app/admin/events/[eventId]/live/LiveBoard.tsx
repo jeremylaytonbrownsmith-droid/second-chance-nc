@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CloseCountdown } from "@/components/CloseCountdown";
 
 interface ItemViewModel {
   id: string;
@@ -9,6 +10,7 @@ interface ItemViewModel {
   itemType: string;
   fmvCents: number | null;
   bidIncrementCents: number | null;
+  closeAt: string | null;
   status: string;
   currentAmountCents: number;
   leadingBidderNumber: number | null;
@@ -156,6 +158,11 @@ export function LiveBoard({
                     FMV {item.fmvCents !== null ? money(item.fmvCents) : "—"} ·{" "}
                     {item.status}
                   </div>
+                  {item.status === "OPEN" && item.closeAt && (
+                    <div className="mt-1">
+                      <CloseCountdown closeAt={item.closeAt} />
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-brand-purple">

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { CloseCountdown } from "@/components/CloseCountdown";
 
 interface ItemViewModel {
   id: string;
@@ -12,6 +13,7 @@ interface ItemViewModel {
   fmvCents: number | null;
   bidIncrementCents: number | null;
   buyNowCents: number | null;
+  closeAt: string | null;
   status: string;
   currentAmountCents: number;
   leadingBidderNumber: number | null;
@@ -217,6 +219,11 @@ export function BidBoard({
                 <div className="mt-0.5 text-xs text-neutral-500">
                   FMV {item.fmvCents !== null ? `$${(item.fmvCents / 100).toFixed(2)}` : "—"}
                 </div>
+                {item.status === "OPEN" && item.closeAt && (
+                  <div className="mt-1">
+                    <CloseCountdown closeAt={item.closeAt} />
+                  </div>
+                )}
 
                 <div className="mt-2 flex items-end justify-between gap-2">
                   <div>

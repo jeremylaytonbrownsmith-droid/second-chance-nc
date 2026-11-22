@@ -145,6 +145,52 @@ export async function voidAuctionItem(
   });
 }
 
+/**
+ * Staggered close (Event night, item 11): set one close time for every
+ * item in a category at once, rather than one item at a time — the whole
+ * point of staggering is that different categories lock at different,
+ * pre-planned times instead of everything closing simultaneously.
+ * Doesn't touch item status directly; closeExpiredItemsForEvent (below)
+ * is what actually flips OPEN -> CLOSED once that time arrives.
+ */
+export async function setCategoryCloseTime(
+  eventId: string,
+  category: string,
+  closeAt: Date,
+  actorId: string,
+): Promise<{ count: number }> {
+  return auditedMutation({
+    actorId,
+    entityType: "AuctionItem",
+    entityId: `category:${category}`,
+    action: "set_category_close_time",
+    before: async () => null,
+    mutate: (tx) =>
+      tx.auctionItem.updateMany({
+        where: { eventId, category, voidedAt: null },
+        data: { closeAt },
+      }),
+    after: async (_tx, result) => result,
+  });
+}
+
+/**
+ * Lazy sweep: any OPEN item whose closeAt has passed gets flipped to
+ * CLOSED. No background job scheduler exists in this app, so this runs
+ * opportunistically at the top of every page that lists an event's
+ * items (the live board, the bidder view, the admin catalog) — cheap
+ * (one indexed bulk UPDATE) and keeps what's displayed honest even if no
+ * one has bid on or looked at a given item since its close time passed.
+ * placeBid (src/lib/auction/bidding.ts) also re-checks closeAt itself as
+ * a last-moment guard, in case a bid slips in between sweeps.
+ */
+export async function closeExpiredItemsForEvent(eventId: string): Promise<void> {
+  await prisma.auctionItem.updateMany({
+    where: { eventId, status: AuctionItemStatus.OPEN, closeAt: { lte: new Date() } },
+    data: { status: AuctionItemStatus.CLOSED },
+  });
+}
+
 export const auctionItemCsvColumns: CsvColumn<AuctionItem>[] = [
   { header: "ID", value: (i) => i.id },
   { header: "Event ID", value: (i) => i.eventId },

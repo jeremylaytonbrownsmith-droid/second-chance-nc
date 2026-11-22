@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { CloseCountdown } from "@/components/CloseCountdown";
 
 interface ItemViewModel {
   id: string;
@@ -12,6 +13,7 @@ interface ItemViewModel {
   image: string | null;
   fmvCents: number | null;
   status: string;
+  closeAt: string | null;
   currentAmountCents: number;
   leadingBidderNumber: number | null;
   bidCount: number;
@@ -145,6 +147,11 @@ export function LiveEventBoard({ items: initialItems }: { items: ItemViewModel[]
                 {item.category ?? item.itemType}
               </div>
               <div className="mt-0.5 line-clamp-2 text-lg font-bold leading-tight text-neutral-900">{item.title}</div>
+              {item.status === "OPEN" && item.closeAt && (
+                <div className="mt-1.5">
+                  <CloseCountdown closeAt={item.closeAt} />
+                </div>
+              )}
               <div className="mt-4 flex items-end justify-between">
                 <div>
                   <div

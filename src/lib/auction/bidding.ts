@@ -30,6 +30,24 @@ export class ItemNotOpenError extends Error {
   }
 }
 
+// Thrown only when an item's closeAt has passed but the sweep hasn't
+// flipped its status column yet. Carries itemId so the caller can close
+// the item out *after* the enclosing transaction has rolled back — doing
+// that write through `tx` itself would both get rolled back by the throw
+// and deadlock against the very row lock this function just took.
+class ItemExpiredError extends ItemNotOpenError {
+  constructor(public readonly itemId: string, message: string) {
+    super(message);
+    this.name = "ItemExpiredError";
+  }
+}
+
+async function closeExpiredItem(error: unknown): Promise<void> {
+  if (error instanceof ItemExpiredError) {
+    await prisma.auctionItem.update({ where: { id: error.itemId }, data: { status: "CLOSED" } });
+  }
+}
+
 export class BidTooLowError extends Error {
   constructor(
     message: string,
@@ -142,6 +160,7 @@ interface AuctionItemRow {
   startingBidCents: number | null;
   bidIncrementCents: number | null;
   buyNowCents: number | null;
+  closeAt: Date | null;
 }
 
 async function lockItemRow(
@@ -149,7 +168,7 @@ async function lockItemRow(
   itemId: string,
 ): Promise<AuctionItemRow> {
   const rows = await tx.$queryRaw<AuctionItemRow[]>`
-    SELECT id, status, "startingBidCents", "bidIncrementCents", "buyNowCents"
+    SELECT id, status, "startingBidCents", "bidIncrementCents", "buyNowCents", "closeAt"
     FROM auction_items
     WHERE id = ${itemId}
     FOR UPDATE
@@ -160,6 +179,14 @@ async function lockItemRow(
   }
   if (item.status !== "OPEN") {
     throw new ItemNotOpenError(`Item ${itemId} is ${item.status}, not OPEN for bidding`);
+  }
+  // Staggered close (item 11): the lazy sweep (closeExpiredItemsForEvent)
+  // normally flips this to CLOSED before anyone gets here, but a bid can
+  // slip in between sweeps — closeAt itself is the source of truth, not
+  // just the status column. The actual status write happens after this
+  // transaction unwinds (see closeExpiredItem) — see ItemExpiredError.
+  if (item.closeAt && item.closeAt <= new Date()) {
+    throw new ItemExpiredError(itemId, `Item ${itemId} closed at ${item.closeAt.toISOString()}`);
   }
   return item;
 }
@@ -235,6 +262,10 @@ export async function placeBid(input: PlaceBidInput): Promise<PlaceBidResult> {
         previousLeaderRegistrationId: stateBefore.leaderRegistrationId,
         bidCount,
       };
+    })
+    .catch(async (err) => {
+      await closeExpiredItem(err);
+      throw err;
     })
     .then(async (result) => {
       // Best-effort, after the transaction above has committed: the
@@ -319,46 +350,55 @@ export async function buyItNow(
 ): Promise<Award> {
   const awardId = randomUUID();
 
-  const award = await auditedMutation({
-    actorId,
-    entityType: "Award",
-    entityId: awardId,
-    action: "buy_it_now",
-    before: async () => null,
-    mutate: async (tx) => {
-      const item = await lockItemRow(tx, itemId);
-      if (!item.buyNowCents) {
-        throw new BuyNowUnavailableError("This item doesn't have a buy-it-now price.");
-      }
+  let award: Award;
+  try {
+    award = await auditedMutation({
+      actorId,
+      entityType: "Award",
+      entityId: awardId,
+      action: "buy_it_now",
+      before: async () => null,
+      mutate: async (tx) => {
+        const item = await lockItemRow(tx, itemId);
+        if (!item.buyNowCents) {
+          throw new BuyNowUnavailableError("This item doesn't have a buy-it-now price.");
+        }
 
-      const positions = await currentPositions(tx, itemId);
-      const state = resolveBidPositions(positions, item.startingBidCents ?? 0, item.bidIncrementCents ?? 0);
-      if (state.currentAmountCents >= item.buyNowCents) {
-        throw new BuyNowUnavailableError(
-          "Bidding has already reached the buy-it-now price — place a regular bid instead.",
-        );
-      }
+        const positions = await currentPositions(tx, itemId);
+        const state = resolveBidPositions(positions, item.startingBidCents ?? 0, item.bidIncrementCents ?? 0);
+        if (state.currentAmountCents >= item.buyNowCents) {
+          throw new BuyNowUnavailableError(
+            "Bidding has already reached the buy-it-now price — place a regular bid instead.",
+          );
+        }
 
-      await tx.bid.create({
-        data: {
-          itemId,
-          registrationId,
-          amountCents: item.buyNowCents,
-          source: "MOBILE",
-          isMaxBid: false,
-        },
-      });
+        await tx.bid.create({
+          data: {
+            itemId,
+            registrationId,
+            amountCents: item.buyNowCents,
+            source: "MOBILE",
+            isMaxBid: false,
+          },
+        });
 
-      const created = await tx.award.create({
-        data: { id: awardId, itemId, registrationId, amountCents: item.buyNowCents },
-      });
+        const created = await tx.award.create({
+          data: { id: awardId, itemId, registrationId, amountCents: item.buyNowCents },
+        });
 
-      await tx.auctionItem.update({ where: { id: itemId }, data: { status: "AWARDED" } });
+        await tx.auctionItem.update({ where: { id: itemId }, data: { status: "AWARDED" } });
 
-      return created;
-    },
-    after: async (_tx, result) => result,
-  });
+        return created;
+      },
+      after: async (_tx, result) => result,
+    });
+  } catch (err) {
+    // Same reason as placeBid's .catch(): a closeAt-expiry throw rolls
+    // back any status write made inside the transaction above, so the
+    // actual CLOSED write has to happen out here, after it unwinds.
+    await closeExpiredItem(err);
+    throw err;
+  }
 
   const registration = await prisma.registration.findUnique({
     where: { id: registrationId },

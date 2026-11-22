@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getItemBidState } from "@/lib/auction/bidding";
+import { closeExpiredItemsForEvent } from "@/lib/admin/auction-items";
 import { LiveBoard } from "./LiveBoard";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export default async function LiveAuctionBoardPage({
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) notFound();
 
+  await closeExpiredItemsForEvent(eventId);
   const [items, registrations] = await Promise.all([
     prisma.auctionItem.findMany({
       where: {
@@ -66,6 +68,7 @@ export default async function LiveAuctionBoardPage({
           itemType: item.itemType,
           fmvCents: item.fmvCents,
           bidIncrementCents: item.bidIncrementCents,
+          closeAt: item.closeAt?.toISOString() ?? null,
           status: item.status,
           currentAmountCents: state.currentAmountCents,
           leadingBidderNumber: state.leadingBidderNumber,

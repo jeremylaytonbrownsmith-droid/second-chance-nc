@@ -3,7 +3,11 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { listConstituents } from "@/lib/admin/constituents";
 import { listItemDonors } from "@/lib/admin/item-donors";
-import { listAuctionItemCategories, listAuctionItems } from "@/lib/admin/auction-items";
+import {
+  closeExpiredItemsForEvent,
+  listAuctionItemCategories,
+  listAuctionItems,
+} from "@/lib/admin/auction-items";
 import { listAuditLogsForEvent } from "@/lib/admin/audit-log";
 import {
   closeAuctionItemAction,
@@ -12,11 +16,13 @@ import {
   createItemDonorAction,
   openAuctionItemAction,
   setAuctionItemFmvAction,
+  setCategoryCloseTimeAction,
 } from "../../actions";
 import { button, card, input, label as labelClass, table } from "../../ui";
 import { getStaffRole } from "@/lib/admin/session";
 import { AdminForm } from "../../AdminForm";
 import { SubmitButton } from "../../SubmitButton";
+import { CloseCountdown } from "@/components/CloseCountdown";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +44,7 @@ export default async function EventDetailPage({
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) notFound();
 
+  await closeExpiredItemsForEvent(eventId);
   const [constituents, itemDonors, auctionItems, itemCategories, auditLogs] = await Promise.all([
     listConstituents(event.orgId),
     listItemDonors(eventId),
@@ -148,6 +155,7 @@ export default async function EventDetailPage({
                 <th className={table.th}>Type</th>
                 <th className={table.th}>FMV</th>
                 <th className={table.th}>Status</th>
+                <th className={table.th}>Closes</th>
                 <th className={table.th}></th>
               </tr>
             </thead>
@@ -172,6 +180,13 @@ export default async function EventDetailPage({
                   <td className={table.td}>{item.itemType}</td>
                   <td className={table.td}>{formatCents(item.fmvCents)}</td>
                   <td className={table.td}>{item.status}</td>
+                  <td className={table.td}>
+                    {item.status === "OPEN" && item.closeAt ? (
+                      <CloseCountdown closeAt={item.closeAt.toISOString()} />
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td className={table.td}>
                     {isAdmin ? (
                       <div className="flex flex-col gap-2">
@@ -237,7 +252,7 @@ export default async function EventDetailPage({
               ))}
               {auctionItems.length === 0 && (
                 <tr>
-                  <td colSpan={8} className={table.empty}>
+                  <td colSpan={9} className={table.empty}>
                     No items yet.
                   </td>
                 </tr>
@@ -288,6 +303,38 @@ export default async function EventDetailPage({
               An item cannot open for bidding until its FMV is set — that gate is
               enforced server-side.
             </p>
+
+            {itemCategories.length > 0 && (
+              <AdminForm
+                action={setCategoryCloseTimeAction}
+                successMessage="Close time set."
+                className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
+              >
+                <input type="hidden" name="eventId" value={eventId} />
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>Category</label>
+                  <select name="category" required className={input}>
+                    {itemCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>Closes at (local time)</label>
+                  <input name="closeAt" type="datetime-local" required className={input} />
+                </div>
+                <SubmitButton pendingLabel="Setting…" className={button.secondary}>
+                  Set close time for category
+                </SubmitButton>
+                <p className="w-full text-xs text-neutral-500">
+                  Staggers this category&rsquo;s silent auction items to close at one planned
+                  time, instead of everything closing at once — the live board and bidder view
+                  show a live countdown once this is set.
+                </p>
+              </AdminForm>
+            )}
           </>
         )}
       </section>
