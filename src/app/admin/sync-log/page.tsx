@@ -2,6 +2,8 @@ import { listRecentSyncLogs } from "@/lib/etapestry/demo-sync";
 import { retrySyncAction } from "../actions";
 import { getStaffRole } from "@/lib/admin/session";
 import { AdminOnlyNotice } from "../AdminOnlyNotice";
+import { AdminForm } from "../AdminForm";
+import { SubmitButton } from "../SubmitButton";
 import { button, table } from "../ui";
 
 export const dynamic = "force-dynamic";
@@ -58,10 +60,12 @@ export default async function SyncLogPage() {
                   {log.lastAttemptAt ? log.lastAttemptAt.toISOString() : "—"}
                 </td>
                 <td className={table.td}>
-                  <form action={retrySyncAction}>
+                  <AdminForm action={retrySyncAction} successMessage="Sync retried.">
                     <input type="hidden" name="transactionId" value={log.localId} />
-                    <button className={button.ghost}>Retry</button>
-                  </form>
+                    <SubmitButton pendingLabel="Retrying…" className={button.ghost}>
+                      Retry
+                    </SubmitButton>
+                  </AdminForm>
                 </td>
               </tr>
             ))}

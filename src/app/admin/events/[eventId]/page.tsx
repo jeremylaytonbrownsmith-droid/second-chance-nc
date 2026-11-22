@@ -15,6 +15,8 @@ import {
 } from "../../actions";
 import { button, card, input, label as labelClass, table } from "../../ui";
 import { getStaffRole } from "@/lib/admin/session";
+import { AdminForm } from "../../AdminForm";
+import { SubmitButton } from "../../SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -171,7 +173,11 @@ export default async function EventDetailPage({
                     {isAdmin ? (
                       <div className="flex flex-col gap-2">
                         {item.fmvCents === null && (
-                          <form action={setAuctionItemFmvAction} className="flex items-center gap-1">
+                          <AdminForm
+                            action={setAuctionItemFmvAction}
+                            successMessage="FMV set."
+                            className="flex items-center gap-1"
+                          >
                             <input type="hidden" name="eventId" value={eventId} />
                             <input type="hidden" name="itemId" value={item.id} />
                             <input
@@ -184,22 +190,40 @@ export default async function EventDetailPage({
                               className={`w-20 ${input}`}
                             />
                             <input name="fmvBasis" placeholder="basis" required className={`w-28 ${input}`} />
-                            <button className={button.primary}>Set FMV</button>
-                          </form>
+                            <SubmitButton pendingLabel="Setting…" className={button.primary}>
+                              Set FMV
+                            </SubmitButton>
+                          </AdminForm>
                         )}
                         {item.fmvCents !== null && item.status === "DRAFT" && (
-                          <form action={openAuctionItemAction} className="flex items-center gap-1">
+                          <AdminForm
+                            action={openAuctionItemAction}
+                            successMessage="Item opened for bidding."
+                            className="flex items-center gap-1"
+                          >
                             <input type="hidden" name="eventId" value={eventId} />
                             <input type="hidden" name="itemId" value={item.id} />
-                            <button className={button.primary}>Open</button>
-                          </form>
+                            <SubmitButton pendingLabel="Opening…" className={button.primary}>
+                              Open
+                            </SubmitButton>
+                          </AdminForm>
                         )}
                         {item.status === "OPEN" && (
-                          <form action={closeAuctionItemAction} className="flex items-center gap-1">
+                          <AdminForm
+                            action={closeAuctionItemAction}
+                            successMessage="Item closed."
+                            className="flex items-center gap-1"
+                          >
                             <input type="hidden" name="eventId" value={eventId} />
                             <input type="hidden" name="itemId" value={item.id} />
-                            <button className={button.primary}>Close</button>
-                          </form>
+                            <SubmitButton
+                              pendingLabel="Closing…"
+                              className={button.primary}
+                              confirmMessage={`Close bidding on ${item.itemNumber} — ${item.title}? This can't be undone from here.`}
+                            >
+                              Close
+                            </SubmitButton>
+                          </AdminForm>
                         )}
                       </div>
                     ) : (
@@ -221,7 +245,11 @@ export default async function EventDetailPage({
 
         {isAdmin && (
           <>
-            <form action={createAuctionItemAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
+            <AdminForm
+              action={createAuctionItemAction}
+              successMessage="Item added."
+              className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
+            >
               <input type="hidden" name="eventId" value={eventId} />
               <div className="flex flex-col gap-1">
                 <label className={labelClass}>Item #</label>
@@ -249,10 +277,10 @@ export default async function EventDetailPage({
                 <label className={labelClass}>FMV basis</label>
                 <input name="fmvBasis" className={`w-32 ${input}`} />
               </div>
-              <button type="submit" className={button.primary}>
+              <SubmitButton pendingLabel="Adding…" className={button.primary}>
                 Add item
-              </button>
-            </form>
+              </SubmitButton>
+            </AdminForm>
             <p className="mt-2 text-xs text-neutral-500">
               An item cannot open for bidding until its FMV is set — that gate is
               enforced server-side.
@@ -304,7 +332,11 @@ export default async function EventDetailPage({
         </div>
 
         {isAdmin && (
-          <form action={createItemDonorAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
+          <AdminForm
+            action={createItemDonorAction}
+            successMessage="Item donor added."
+            className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
+          >
             <input type="hidden" name="eventId" value={eventId} />
             <div className="flex flex-col gap-1">
               <label className={labelClass}>Donor</label>
@@ -327,10 +359,10 @@ export default async function EventDetailPage({
                 className={`w-28 ${input}`}
               />
             </div>
-            <button type="submit" disabled={constituents.length === 0} className={button.primary}>
+            <SubmitButton pendingLabel="Adding…" disabled={constituents.length === 0} className={button.primary}>
               Add item donor
-            </button>
-          </form>
+            </SubmitButton>
+          </AdminForm>
         )}
       </section>
 
@@ -373,7 +405,11 @@ export default async function EventDetailPage({
         </div>
 
         {isAdmin && (
-          <form action={createConstituentAction} className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}>
+          <AdminForm
+            action={createConstituentAction}
+            successMessage="Constituent added."
+            className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
+          >
             <input type="hidden" name="orgId" value={event.orgId} />
             <input type="hidden" name="eventId" value={eventId} />
             <label className="flex items-center gap-1.5 text-xs text-neutral-500">
@@ -395,10 +431,10 @@ export default async function EventDetailPage({
               <label className={labelClass}>Email</label>
               <input name="email" type="email" className={input} />
             </div>
-            <button type="submit" className={button.primary}>
+            <SubmitButton pendingLabel="Adding…" className={button.primary}>
               Add constituent
-            </button>
-          </form>
+            </SubmitButton>
+          </AdminForm>
         )}
       </section>
 

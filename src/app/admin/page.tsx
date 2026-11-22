@@ -3,6 +3,8 @@ import { listEvents } from "@/lib/admin/events";
 import { getOrCreateDemoEvent } from "@/lib/demo/seed";
 import { getStaffRole } from "@/lib/admin/session";
 import { createEventAction, createOrganizationAction } from "./actions";
+import { AdminForm } from "./AdminForm";
+import { SubmitButton } from "./SubmitButton";
 import { HubCard } from "./HubCard";
 import { button, card, input, label as labelClass, table } from "./ui";
 import {
@@ -159,8 +161,9 @@ export default async function AdminHomePage() {
         </div>
 
         {isAdmin && (
-          <form
+          <AdminForm
             action={createOrganizationAction}
+            successMessage="Organization added."
             className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
           >
             <div className="flex flex-col gap-1">
@@ -182,10 +185,10 @@ export default async function AdminHomePage() {
                 className={`w-20 ${input}`}
               />
             </div>
-            <button type="submit" className={button.primary}>
+            <SubmitButton pendingLabel="Adding…" className={button.primary}>
               Add organization
-            </button>
-          </form>
+            </SubmitButton>
+          </AdminForm>
         )}
       </section>
 
@@ -230,8 +233,9 @@ export default async function AdminHomePage() {
         </div>
 
         {isAdmin && (
-          <form
+          <AdminForm
             action={createEventAction}
+            successMessage="Event added."
             className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
           >
             <div className="flex flex-col gap-1">
@@ -262,10 +266,14 @@ export default async function AdminHomePage() {
                 className={`w-24 ${input}`}
               />
             </div>
-            <button type="submit" className={button.primary} disabled={organizations.length === 0}>
+            <SubmitButton
+              pendingLabel="Adding…"
+              className={button.primary}
+              disabled={organizations.length === 0}
+            >
               Add event
-            </button>
-          </form>
+            </SubmitButton>
+          </AdminForm>
         )}
       </section>
     </div>

@@ -4,6 +4,8 @@ import { listSolicitationCategories, listSolicitations } from "@/lib/admin/solic
 import { createSolicitationAction, setSolicitationStatusAction } from "../../../actions";
 import { getStaffRole } from "@/lib/admin/session";
 import { AdminOnlyNotice } from "../../../AdminOnlyNotice";
+import { AdminForm } from "../../../AdminForm";
+import { SubmitButton } from "../../../SubmitButton";
 import { SolicitationImportUploader } from "./SolicitationImportUploader";
 import { button, card, input, label as labelClass, table } from "../../../ui";
 
@@ -246,7 +248,11 @@ export default async function SolicitationsPage({
         </div>
       )}
 
-      <form action={createSolicitationAction} className={`flex flex-wrap items-end gap-3 text-sm ${card}`}>
+      <AdminForm
+        action={createSolicitationAction}
+        successMessage="Solicitation added."
+        className={`flex flex-wrap items-end gap-3 text-sm ${card}`}
+      >
         <input type="hidden" name="eventId" value={eventId} />
         <div className="flex flex-col gap-1">
           <label className={labelClass}>Contact / business name</label>
@@ -288,10 +294,10 @@ export default async function SolicitationsPage({
           <label className={labelClass}>Notes</label>
           <input name="notes" className={`w-40 ${input}`} />
         </div>
-        <button type="submit" className={button.primary}>
+        <SubmitButton pendingLabel="Adding…" className={button.primary}>
           Add solicitation
-        </button>
-      </form>
+        </SubmitButton>
+      </AdminForm>
     </div>
   );
 }
@@ -308,11 +314,13 @@ function StatusForm({
   label: string;
 }) {
   return (
-    <form action={setSolicitationStatusAction}>
+    <AdminForm action={setSolicitationStatusAction} successMessage="Status updated.">
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="solicitationId" value={solicitationId} />
       <input type="hidden" name="status" value={status} />
-      <button className={button.tableAction}>{label}</button>
-    </form>
+      <SubmitButton pendingLabel="Updating…" className={button.tableAction}>
+        {label}
+      </SubmitButton>
+    </AdminForm>
   );
 }

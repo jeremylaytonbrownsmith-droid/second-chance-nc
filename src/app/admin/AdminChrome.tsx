@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { StaffRole } from "@/lib/admin-auth";
+import { ToastProvider } from "@/components/Toast";
 import { ResetDemoButton } from "./ResetDemoButton";
 import { logoutAction } from "./login/actions";
 
@@ -27,6 +28,7 @@ export function AdminChrome({
   }
 
   return (
+    <ToastProvider>
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-brand-lavender-tint to-white text-neutral-900">
       <header className="sticky top-0 z-10 border-b border-brand-lavender/40 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-md sm:px-6">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
@@ -111,5 +113,6 @@ export function AdminChrome({
         .
       </footer>
     </div>
+    </ToastProvider>
   );
 }

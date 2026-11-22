@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 import { button, card, input, label as labelClass } from "../../../ui";
 
 interface RegistrationOption {
@@ -49,6 +50,7 @@ export function CheckoutClient({
   const [method, setMethod] = useState<"CARD" | "CASH" | "CHECK">("CARD");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const toast = useToast();
 
   useEffect(() => {
     if (!registrationId) {
@@ -115,12 +117,17 @@ export function CheckoutClient({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Checkout failed");
+        const message = data.message ?? "Checkout failed";
+        setError(message);
+        toast.error(message);
         return;
       }
+      toast.success("Checkout complete.");
       router.push(`/admin/receipts/${data.transactionId}`);
     } catch {
-      setError("Network error — try again.");
+      const message = "Network error — try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

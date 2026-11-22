@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CheckCircleIcon, WarningIcon } from "@/app/admin/icons";
+import { useToast } from "@/components/Toast";
 
 interface LogEntry {
   id: string;
@@ -16,6 +17,7 @@ export function ClerkForm({ eventId }: { eventId: string }) {
   const [log, setLog] = useState<LogEntry[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const itemInputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   useEffect(() => {
     itemInputRef.current?.focus();
@@ -38,28 +40,21 @@ export function ClerkForm({ eventId }: { eventId: string }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setLog((prev) => [
-          { id: crypto.randomUUID(), text: data.message ?? "Entry failed", isError: true },
-          ...prev,
-        ]);
+        const message = data.message ?? "Entry failed";
+        setLog((prev) => [{ id: crypto.randomUUID(), text: message, isError: true }, ...prev]);
+        toast.error(message);
       } else {
-        setLog((prev) => [
-          {
-            id: crypto.randomUUID(),
-            text: `${itemNumber} — ${data.award.itemTitle} → paddle #${bidderNumber} for $${(hammerPriceCents / 100).toFixed(2)}`,
-            isError: false,
-          },
-          ...prev,
-        ]);
+        const message = `${itemNumber} — ${data.award.itemTitle} → paddle #${bidderNumber} for $${(hammerPriceCents / 100).toFixed(2)}`;
+        setLog((prev) => [{ id: crypto.randomUUID(), text: message, isError: false }, ...prev]);
+        toast.success("Hammer price recorded.");
         setItemNumber("");
         setBidderNumber("");
         setHammerPrice("");
       }
     } catch {
-      setLog((prev) => [
-        { id: crypto.randomUUID(), text: "Network error — try again.", isError: true },
-        ...prev,
-      ]);
+      const message = "Network error — try again.";
+      setLog((prev) => [{ id: crypto.randomUUID(), text: message, isError: true }, ...prev]);
+      toast.error(message);
     } finally {
       setSubmitting(false);
       itemInputRef.current?.focus();

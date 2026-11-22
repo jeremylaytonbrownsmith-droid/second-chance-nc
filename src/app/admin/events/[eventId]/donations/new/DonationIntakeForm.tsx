@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/Toast";
 import { CameraIcon } from "../../../../icons";
 import { button, card, input, label as labelClass } from "../../../../ui";
 
@@ -74,6 +75,7 @@ export function DonationIntakeForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ auctionItemId: string } | null>(null);
+  const toast = useToast();
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     setPhotoError("");
@@ -132,12 +134,17 @@ export function DonationIntakeForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Couldn't save this donation.");
+        const message = data.message ?? "Couldn't save this donation.";
+        setError(message);
+        toast.error(message);
         return;
       }
       setResult(data);
+      toast.success("Donation logged.");
     } catch {
-      setError("Network error — try again.");
+      const message = "Network error — try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

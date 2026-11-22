@@ -1,10 +1,12 @@
 "use client";
 
 import { useTransition } from "react";
+import { useToast } from "@/components/Toast";
 import { resetDemoDataAction } from "./actions";
 
 export function ResetDemoButton() {
   const [isPending, startTransition] = useTransition();
+  const toast = useToast();
 
   function handleClick() {
     if (
@@ -14,8 +16,13 @@ export function ResetDemoButton() {
     ) {
       return;
     }
-    startTransition(() => {
-      resetDemoDataAction();
+    startTransition(async () => {
+      const result = await resetDemoDataAction();
+      if (result.ok) {
+        toast.success(result.message ?? "Demo data reset.");
+      } else {
+        toast.error(result.message ?? "Reset failed.");
+      }
     });
   }
 

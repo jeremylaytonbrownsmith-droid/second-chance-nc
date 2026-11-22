@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 import { button, card, input, label as labelClass } from "../../../ui";
 
 interface ImportSummary {
@@ -20,6 +21,7 @@ export function SolicitationImportUploader({ eventId }: { eventId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [summary, setSummary] = useState<ImportSummary | null>(null);
+  const toast = useToast();
 
   async function handleSubmit() {
     setError("");
@@ -38,13 +40,18 @@ export function SolicitationImportUploader({ eventId }: { eventId: string }) {
       const res = await fetch("/api/admin/solicitations/import", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Import failed");
+        const message = data.message ?? "Import failed";
+        setError(message);
+        toast.error(message);
         return;
       }
       setSummary(data);
+      toast.success(`${data.created} added, ${data.updated} updated.`);
       router.refresh();
     } catch {
-      setError("Network error — try again.");
+      const message = "Network error — try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "@/components/Toast";
 import { button, card, label as labelClass } from "../../../ui";
 
 interface ImportRowOutcome {
@@ -27,6 +28,7 @@ export function ImportUploader({ eventId, orgId }: { eventId: string; orgId: str
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [summary, setSummary] = useState<ImportSummary | null>(null);
+  const toast = useToast();
 
   async function handleSubmit() {
     setError("");
@@ -45,12 +47,17 @@ export function ImportUploader({ eventId, orgId }: { eventId: string; orgId: str
       const res = await fetch("/api/admin/import", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Import failed");
+        const message = data.message ?? "Import failed";
+        setError(message);
+        toast.error(message);
         return;
       }
       setSummary(data);
+      toast.success(`Imported ${data.importedRows} of ${data.totalRows} rows.`);
     } catch {
-      setError("Network error — try again.");
+      const message = "Network error — try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
