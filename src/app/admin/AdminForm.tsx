@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useToast } from "@/components/Toast";
 import { initialActionState, type ActionState } from "@/lib/action-state";
+import { useModalClose } from "./Modal";
 
 /**
  * Wraps a server action bound to useActionState so every admin form gets
@@ -26,6 +27,7 @@ export function AdminForm({
   const toast = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const handledRef = useRef(state);
+  const modalClose = useModalClose();
 
   useEffect(() => {
     if (state === handledRef.current) return;
@@ -33,6 +35,7 @@ export function AdminForm({
     if (state.ok) {
       toast.success(state.message ?? successMessage);
       formRef.current?.reset();
+      modalClose?.();
     } else {
       toast.error(state.message ?? "Something went wrong.");
     }

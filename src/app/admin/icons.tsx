@@ -138,3 +138,50 @@ export function CameraIcon() {
     </svg>
   );
 }
+
+export function GiftIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <path d="M4 9.5h16V13H4zM5.5 13H18.5V19.5H5.5zM12 9.5V19.5" />
+      <path d="M12 9.5c-1.2 0-3.5-.4-3.5-2.4S10.3 4.5 12 7c1.7-2.5 3.5-1.9 3.5-.1s-2.3 2.6-3.5 2.6Z" />
+    </svg>
+  );
+}
+
+export function PackageIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <path d="M12 3.5 4 7.5v9l8 4 8-4v-9Z" />
+      <path d="M4 7.5 12 11.5M12 11.5 20 7.5M12 11.5V20.5" />
+    </svg>
+  );
+}
+
+export function UsersIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <circle cx="9" cy="8" r="2.6" />
+      <path d="M3.8 18c.6-2.8 2.6-4.3 5.2-4.3s4.6 1.5 5.2 4.3" />
+      <circle cx="16.3" cy="8.5" r="2.1" />
+      <path d="M14.8 13.8c2 .2 3.4 1.6 3.9 3.8" />
+    </svg>
+  );
+}
+
+export function DocumentIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <path d="M7 3.5h7l3.5 3.5V20.5h-10.5Z" />
+      <path d="M14 3.5v3.5h3.5M9 12h6M9 15.5h6" />
+    </svg>
+  );
+}
+
+export function CheckInDoorIcon() {
+  return (
+    <svg {...common} className="h-6 w-6" aria-hidden>
+      <path d="M8 3.5h8v17H8Z" />
+      <path d="M3.5 12h5M6 9.8 8.5 12 6 14.2" />
+    </svg>
+  );
+}

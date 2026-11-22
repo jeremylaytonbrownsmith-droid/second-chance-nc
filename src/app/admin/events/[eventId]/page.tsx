@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { listConstituents } from "@/lib/admin/constituents";
 import { listItemDonors } from "@/lib/admin/item-donors";
@@ -8,6 +8,7 @@ import {
   listAuctionItemCategories,
   listAuctionItems,
 } from "@/lib/admin/auction-items";
+import { getItemBidState } from "@/lib/auction/bidding";
 import { listAuditLogsForEvent } from "@/lib/admin/audit-log";
 import {
   closeAuctionItemAction,
@@ -23,6 +24,14 @@ import { getStaffRole } from "@/lib/admin/session";
 import { AdminForm } from "../../AdminForm";
 import { SubmitButton } from "../../SubmitButton";
 import { CloseCountdown } from "@/components/CloseCountdown";
+import {
+  Form8283NeededBadge,
+  Form8283ReceivedBadge,
+  ItemStatusBadge,
+  RegistrationStatusDot,
+  formatFmvForItemType,
+  itemTypeLabel,
+} from "../../badges";
 
 export const dynamic = "force-dynamic";
 
@@ -45,13 +54,23 @@ export default async function EventDetailPage({
   if (!event) notFound();
 
   await closeExpiredItemsForEvent(eventId);
-  const [constituents, itemDonors, auctionItems, itemCategories, auditLogs] = await Promise.all([
+  const [constituents, itemDonors, auctionItems, itemCategories, auditLogs, registrations] = await Promise.all([
     listConstituents(event.orgId),
     listItemDonors(eventId),
     listAuctionItems(eventId, { category, search: q }),
     listAuctionItemCategories(eventId),
     isAdmin ? listAuditLogsForEvent(eventId) : Promise.resolve([]),
+    prisma.registration.findMany({ where: { eventId, voidedAt: null } }),
   ]);
+  const registrationByConstituentId = new Map(registrations.map((r) => [r.constituentId, r]));
+
+  const BIDDABLE_TYPES = new Set(["SILENT", "LIVE"]);
+  const itemsWithBidState = await Promise.all(
+    auctionItems.map(async (item) => ({
+      item,
+      state: BIDDABLE_TYPES.has(item.itemType) ? await getItemBidState(item.id) : null,
+    })),
+  );
 
   const constituentName = (id: string) => {
     const c = constituents.find((c) => c.id === id);
@@ -69,42 +88,6 @@ export default async function EventDetailPage({
           {event.eventDate.toISOString().slice(0, 10)} · Tax year{" "}
           {event.taxYear} · {event.status}
         </p>
-        <div className="mt-3 flex flex-wrap gap-1 text-sm">
-          <a href={`/admin/events/${eventId}/checkin`} className={button.ghost}>
-            Check in
-          </a>
-          <a href={`/admin/events/${eventId}/live`} className={button.ghost}>
-            Live auction board
-          </a>
-          <a href={`/admin/events/${eventId}/clerk`} className={button.ghost}>
-            Live auction clerk
-          </a>
-          <a href={`/admin/events/${eventId}/pickup`} className={button.ghost}>
-            Pickup
-          </a>
-          <Link href="/bid" className={button.ghost}>
-            Bidder view
-          </Link>
-          {isAdmin && (
-            <>
-              <a href={`/admin/events/${eventId}/checkout`} className={button.ghost}>
-                Checkout
-              </a>
-              <a href={`/admin/events/${eventId}/fund-a-need`} className={button.ghost}>
-                Fund a need
-              </a>
-              <a href={`/admin/events/${eventId}/import`} className={button.ghost}>
-                Import spreadsheet
-              </a>
-              <a href={`/admin/events/${eventId}/solicitations`} className={button.ghost}>
-                Solicitations
-              </a>
-              <a href={`/admin/events/${eventId}/donations/new`} className={button.ghost}>
-                Log a donation
-              </a>
-            </>
-          )}
-        </div>
       </div>
 
       {/* Auction items */}
@@ -162,11 +145,13 @@ export default async function EventDetailPage({
                 <th className={table.th}>FMV</th>
                 <th className={table.th}>Status</th>
                 <th className={table.th}>Closes</th>
+                <th className={table.th}>Current bid</th>
+                <th className={table.th}>Paddle #</th>
                 <th className={table.th}></th>
               </tr>
             </thead>
             <tbody>
-              {auctionItems.map((item) => (
+              {itemsWithBidState.map(({ item, state }) => (
                 <tr key={item.id} className={table.row}>
                   <td className={table.td}>
                     {item.images[0] ? (
@@ -177,21 +162,39 @@ export default async function EventDetailPage({
                         className="h-10 w-10 rounded-md object-cover"
                       />
                     ) : (
-                      <div className="h-10 w-10 rounded-md bg-neutral-100" />
+                      <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-gradient-to-br from-brand-lavender/50 to-brand-purple/20">
+                        <Image
+                          src="/brand/paw-icon.png"
+                          alt=""
+                          width={24}
+                          height={24}
+                          className="h-6 w-6 opacity-40"
+                        />
+                      </div>
                     )}
                   </td>
                   <td className={table.td}>{item.itemNumber}</td>
                   <td className={table.td}>{item.title}</td>
                   <td className={table.td}>{item.category ?? "—"}</td>
-                  <td className={table.td}>{item.itemType}</td>
-                  <td className={table.td}>{formatCents(item.fmvCents)}</td>
-                  <td className={table.td}>{item.status}</td>
+                  <td className={table.td}>{itemTypeLabel(item.itemType)}</td>
+                  <td className={table.td}>{formatFmvForItemType(item.itemType, item.fmvCents)}</td>
+                  <td className={table.td}>
+                    <ItemStatusBadge status={item.status} />
+                  </td>
                   <td className={table.td}>
                     {item.status === "OPEN" && item.closeAt ? (
                       <CloseCountdown closeAt={item.closeAt.toISOString()} />
                     ) : (
                       "—"
                     )}
+                  </td>
+                  <td className={table.td}>
+                    {state ? formatCents(state.currentAmountCents) : "—"}
+                  </td>
+                  <td className={table.td}>
+                    {state?.leadingBidderNumber !== null && state?.leadingBidderNumber !== undefined
+                      ? `#${state.leadingBidderNumber}`
+                      : "—"}
                   </td>
                   <td className={table.td}>
                     {isAdmin ? (
@@ -258,7 +261,7 @@ export default async function EventDetailPage({
               ))}
               {auctionItems.length === 0 && (
                 <tr>
-                  <td colSpan={9} className={table.empty}>
+                  <td colSpan={11} className={table.empty}>
                     No items yet.
                   </td>
                 </tr>
@@ -368,11 +371,15 @@ export default async function EventDetailPage({
                 <tr key={donor.id} className={table.row}>
                   <td className={table.td}>{constituentName(donor.constituentId)}</td>
                   <td className={table.td}>{formatCents(donor.claimedValueCents)}</td>
-                  <td className={table.td}>{donor.substantiationNeeded ? "Yes" : "No"}</td>
                   <td className={table.td}>
-                    {donor.form8283ReceivedAt
-                      ? donor.form8283ReceivedAt.toISOString().slice(0, 10)
-                      : "—"}
+                    <Form8283NeededBadge needed={donor.substantiationNeeded} />
+                  </td>
+                  <td className={table.td}>
+                    {donor.substantiationNeeded ? (
+                      <Form8283ReceivedBadge receivedAt={donor.form8283ReceivedAt} />
+                    ) : (
+                      "—"
+                    )}
                   </td>
                 </tr>
               ))}
@@ -437,6 +444,7 @@ export default async function EventDetailPage({
                 <th className={table.th}>Name</th>
                 <th className={table.th}>Email</th>
                 <th className={table.th}>Business</th>
+                <th className={table.th}>This event</th>
               </tr>
             </thead>
             <tbody>
@@ -447,11 +455,14 @@ export default async function EventDetailPage({
                   </td>
                   <td className={table.td}>{c.email ?? "—"}</td>
                   <td className={table.td}>{c.isBusiness ? "Yes" : "No"}</td>
+                  <td className={table.td}>
+                    <RegistrationStatusDot status={registrationByConstituentId.get(c.id)?.status ?? null} />
+                  </td>
                 </tr>
               ))}
               {constituents.length === 0 && (
                 <tr>
-                  <td colSpan={3} className={table.empty}>
+                  <td colSpan={4} className={table.empty}>
                     No constituents yet.
                   </td>
                 </tr>

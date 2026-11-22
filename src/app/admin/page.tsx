@@ -2,27 +2,39 @@ import { listOrganizations } from "@/lib/admin/organizations";
 import { listEvents } from "@/lib/admin/events";
 import { getOrCreateDemoEvent } from "@/lib/demo/seed";
 import { getStaffRole } from "@/lib/admin/session";
+import { getTotalRaisedCents } from "@/lib/checkout/checkout";
+import { prisma } from "@/lib/prisma";
 import { createEventAction, createOrganizationAction } from "./actions";
 import { AdminForm } from "./AdminForm";
 import { SubmitButton } from "./SubmitButton";
 import { HubCard } from "./HubCard";
+import { Modal } from "./Modal";
 import { button, card, input, label as labelClass, table } from "./ui";
 import {
   BookOpenIcon,
   CameraIcon,
+  CheckInDoorIcon,
   ClipboardListIcon,
   CreditCardIcon,
   DeviceMobileIcon,
+  DocumentIcon,
   FolderIcon,
   GavelIcon,
+  GiftIcon,
   MonitorIcon,
+  PackageIcon,
   PlayCircleIcon,
   PulseIcon,
   SyncIcon,
   UploadIcon,
+  UsersIcon,
 } from "./icons";
 
 export const dynamic = "force-dynamic";
+
+function money(cents: number): string {
+  return `$${(cents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
 
 export default async function AdminHomePage() {
   const [organizations, events, demoEvent, isAdmin] = await Promise.all([
@@ -38,21 +50,50 @@ export default async function AdminHomePage() {
     eventsByOrg.set(event.orgId, list);
   }
 
+  const [raisedCents, itemCount, checkedInCount, unclaimedAwardCount] = await Promise.all([
+    getTotalRaisedCents(demoEvent.id),
+    prisma.auctionItem.count({ where: { eventId: demoEvent.id, voidedAt: null } }),
+    prisma.registration.count({ where: { eventId: demoEvent.id, status: "CHECKED_IN" } }),
+    prisma.award.count({ where: { item: { eventId: demoEvent.id }, voidedAt: null, pickedUpAt: null } }),
+  ]);
+
   return (
     <div className="space-y-12">
       <section>
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-purple">Second Chance</p>
-        <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-brand-purple-dark">Quick actions</h1>
-        <p className="mt-1.5 text-sm text-neutral-500">
-          Everything below points at the live demo event — {demoEvent.name}.
-        </p>
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <HubCard
-            href="/story"
-            icon={<PlayCircleIcon />}
-            title="Story Mode"
-            description="One link — auto-plays the whole night, doors open to donor CRM sync, on the real app"
-          />
+        <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-brand-purple-dark">
+          {demoEvent.name}
+        </h1>
+        <div className={`mt-4 ${card} flex flex-wrap items-center gap-6 sm:gap-10`}>
+          <div>
+            <p className="text-xs font-medium text-neutral-500">Status</p>
+            <p className="mt-0.5 text-lg font-semibold text-neutral-900">{demoEvent.status}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-neutral-500">Raised so far</p>
+            <p className="mt-0.5 text-lg font-semibold text-brand-purple-dark">{money(raisedCents)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-neutral-500">Items</p>
+            <p className="mt-0.5 text-lg font-semibold text-neutral-900">{itemCount}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-neutral-500">Checked in</p>
+            <p className="mt-0.5 text-lg font-semibold text-neutral-900">{checkedInCount}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-neutral-500">Unclaimed items</p>
+            <p className="mt-0.5 text-lg font-semibold text-neutral-900">{unclaimedAwardCount}</p>
+          </div>
+          <a href={`/admin/events/${demoEvent.id}`} className={`ml-auto ${button.primary}`}>
+            Open event →
+          </a>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold text-brand-purple-dark">Before the event</h2>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <HubCard
             href={`/admin/events/${demoEvent.id}`}
             icon={<FolderIcon />}
@@ -72,6 +113,24 @@ export default async function AdminHomePage() {
             description="Snap a photo, describe it, set a value — creates the catalog item"
           />
           <HubCard
+            href={`/admin/events/${demoEvent.id}/import`}
+            icon={<UploadIcon />}
+            title="Import Spreadsheet"
+            description="Load historical gift data, get correct tax totals"
+          />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold text-brand-purple-dark">During the event</h2>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <HubCard
+            href={`/admin/events/${demoEvent.id}/checkin`}
+            icon={<CheckInDoorIcon />}
+            title="Check In"
+            description="Search or walk-in, assigns a paddle number and QR code"
+          />
+          <HubCard
             href={`/admin/events/${demoEvent.id}/live`}
             icon={<MonitorIcon />}
             title="Live Auction Board"
@@ -82,6 +141,12 @@ export default async function AdminHomePage() {
             icon={<GavelIcon />}
             title="Live Auction Clerk"
             description="Item #, paddle #, hammer price — one screen"
+          />
+          <HubCard
+            href={`/admin/events/${demoEvent.id}/fund-a-need`}
+            icon={<GiftIcon />}
+            title="Fund a Need"
+            description="Pick a giving level, tap every paddle that went up, submit as one batch"
           />
           <HubCard
             href={`/admin/events/${demoEvent.id}/checkout`}
@@ -101,6 +166,18 @@ export default async function AdminHomePage() {
             title="Live Event Board"
             description="The screen for the room — every price live, no bidder login needed to watch"
           />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold text-brand-purple-dark">After the event</h2>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <HubCard
+            href={`/admin/events/${demoEvent.id}/pickup`}
+            icon={<PackageIcon />}
+            title="Pickup"
+            description="Mark won items picked up, see what's still unclaimed"
+          />
           <HubCard
             href="/admin/sync-log"
             icon={<SyncIcon />}
@@ -108,10 +185,28 @@ export default async function AdminHomePage() {
             description="Gift sync queue, idempotency, retries"
           />
           <HubCard
-            href={`/admin/events/${demoEvent.id}/import`}
-            icon={<UploadIcon />}
-            title="Import Spreadsheet"
-            description="Load historical gift data, get correct tax totals"
+            href="/admin/statements"
+            icon={<DocumentIcon />}
+            title="Year-End Statements"
+            description="Per-donor giving summary for tax season — PDF and CSV"
+          />
+          <HubCard
+            href="/admin/duplicates"
+            icon={<UsersIcon />}
+            title="Duplicate Donors"
+            description="Likely duplicate constituent records, with a merge screen"
+          />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold text-brand-purple-dark">Reference</h2>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <HubCard
+            href="/story"
+            icon={<PlayCircleIcon />}
+            title="Story Mode"
+            description="One link — auto-plays the whole night, doors open to donor CRM sync, on the real app"
           />
           <HubCard
             href="/admin/help"
@@ -123,7 +218,41 @@ export default async function AdminHomePage() {
       </section>
 
       <section>
-        <h2 className="text-xl font-bold text-brand-purple-dark">Organizations</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-brand-purple-dark">Organizations</h2>
+          {isAdmin && (
+            <Modal triggerLabel="+ Add organization" triggerClassName={button.secondary} title="Add organization">
+              <AdminForm
+                action={createOrganizationAction}
+                successMessage="Organization added."
+                className="flex flex-col gap-3"
+              >
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>Name</label>
+                  <input name="name" required className={input} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>EIN</label>
+                  <input name="ein" className={input} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>Fiscal year start (month)</label>
+                  <input
+                    name="fiscalYearStart"
+                    type="number"
+                    min={1}
+                    max={12}
+                    defaultValue={1}
+                    className={`w-20 ${input}`}
+                  />
+                </div>
+                <SubmitButton pendingLabel="Adding…" className={button.primary}>
+                  Add organization
+                </SubmitButton>
+              </AdminForm>
+            </Modal>
+          )}
+        </div>
         <div className={`mt-4 ${table.wrapper}`}>
           <table className={`min-w-[480px] ${table.table}`}>
             <thead>
@@ -159,41 +288,57 @@ export default async function AdminHomePage() {
             </tbody>
           </table>
         </div>
-
-        {isAdmin && (
-          <AdminForm
-            action={createOrganizationAction}
-            successMessage="Organization added."
-            className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
-          >
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Name</label>
-              <input name="name" required className={input} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>EIN</label>
-              <input name="ein" className={input} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Fiscal year start (month)</label>
-              <input
-                name="fiscalYearStart"
-                type="number"
-                min={1}
-                max={12}
-                defaultValue={1}
-                className={`w-20 ${input}`}
-              />
-            </div>
-            <SubmitButton pendingLabel="Adding…" className={button.primary}>
-              Add organization
-            </SubmitButton>
-          </AdminForm>
-        )}
       </section>
 
       <section>
-        <h2 className="text-xl font-bold text-brand-purple-dark">Events</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-brand-purple-dark">Events</h2>
+          {isAdmin && (
+            <Modal triggerLabel="+ Add event" triggerClassName={button.secondary} title="Add event">
+              <AdminForm
+                action={createEventAction}
+                successMessage="Event added."
+                className="flex flex-col gap-3"
+              >
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>Organization</label>
+                  <select name="orgId" required className={input}>
+                    {organizations.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>Event name</label>
+                  <input name="name" required className={input} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>Event date</label>
+                  <input name="eventDate" type="date" required className={input} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>Tax year</label>
+                  <input
+                    name="taxYear"
+                    type="number"
+                    required
+                    defaultValue={new Date().getUTCFullYear()}
+                    className={`w-24 ${input}`}
+                  />
+                </div>
+                <SubmitButton
+                  pendingLabel="Adding…"
+                  className={button.primary}
+                  disabled={organizations.length === 0}
+                >
+                  Add event
+                </SubmitButton>
+              </AdminForm>
+            </Modal>
+          )}
+        </div>
         <div className={`mt-4 ${table.wrapper}`}>
           <table className={`min-w-[560px] ${table.table}`}>
             <thead>
@@ -231,50 +376,6 @@ export default async function AdminHomePage() {
             </tbody>
           </table>
         </div>
-
-        {isAdmin && (
-          <AdminForm
-            action={createEventAction}
-            successMessage="Event added."
-            className={`mt-4 flex flex-wrap items-end gap-3 ${card}`}
-          >
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Organization</label>
-              <select name="orgId" required className={input}>
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Event name</label>
-              <input name="name" required className={input} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Event date</label>
-              <input name="eventDate" type="date" required className={input} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className={labelClass}>Tax year</label>
-              <input
-                name="taxYear"
-                type="number"
-                required
-                defaultValue={new Date().getUTCFullYear()}
-                className={`w-24 ${input}`}
-              />
-            </div>
-            <SubmitButton
-              pendingLabel="Adding…"
-              className={button.primary}
-              disabled={organizations.length === 0}
-            >
-              Add event
-            </SubmitButton>
-          </AdminForm>
-        )}
       </section>
     </div>
   );
